@@ -6,15 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="keywords" content="golang">
+    <meta name="description" content="前言最近的项目都使用 Golang 进行开发，因为自己是从头自学，难免踩了很多坑。目前项目接近尾声，抽空对一些重要的知识点做一些总结。 Goroutine 与 Channel什么是 Goroutine 呢？有人说它是轻量级的进程，或者干脆说是协程。其实都不太准确，协程仅仅是在一个进程中进行子程序的切换，而 Goroutine 是可以多线程多路复用的。简而言之，Goroutine 是一个轻量级的、与">
+<meta name="keywords" content="golang">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Golang 并发编程实践">
 <meta property="og:url" content="http://zhddev.cc/Golang 并发编程实践/index.html">
 <meta property="og:site_name" content="海东的博客">
+<meta property="og:description" content="前言最近的项目都使用 Golang 进行开发，因为自己是从头自学，难免踩了很多坑。目前项目接近尾声，抽空对一些重要的知识点做一些总结。 Goroutine 与 Channel什么是 Goroutine 呢？有人说它是轻量级的进程，或者干脆说是协程。其实都不太准确，协程仅仅是在一个进程中进行子程序的切换，而 Goroutine 是可以多线程多路复用的。简而言之，Goroutine 是一个轻量级的、与">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2019-03-04T02:58:49.138Z">
+<meta property="og:updated_time" content="2019-03-04T10:59:29.136Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Golang 并发编程实践">
+<meta name="twitter:description" content="前言最近的项目都使用 Golang 进行开发，因为自己是从头自学，难免踩了很多坑。目前项目接近尾声，抽空对一些重要的知识点做一些总结。 Goroutine 与 Channel什么是 Goroutine 呢？有人说它是轻量级的进程，或者干脆说是协程。其实都不太准确，协程仅仅是在一个进程中进行子程序的切换，而 Goroutine 是可以多线程多路复用的。简而言之，Goroutine 是一个轻量级的、与">
     
     
         
@@ -100,7 +103,7 @@
 
     </div>
     <div id="toc">
-      
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Goroutine-与-Channel"><span class="toc-number">2.</span> <span class="toc-text">Goroutine 与 Channel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Select-的用法"><span class="toc-number">3.</span> <span class="toc-text">Select 的用法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#深入理解-sync-包"><span class="toc-number">4.</span> <span class="toc-text">深入理解 sync 包</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Map"><span class="toc-number">4.1.</span> <span class="toc-text">Map</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Mutex"><span class="toc-number">4.2.</span> <span class="toc-text">Mutex</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RWMutex"><span class="toc-number">4.3.</span> <span class="toc-text">RWMutex</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Once"><span class="toc-number">4.4.</span> <span class="toc-text">Once</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pool"><span class="toc-number">4.5.</span> <span class="toc-text">Pool</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#WaitGroup"><span class="toc-number">4.6.</span> <span class="toc-text">WaitGroup</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用-Context"><span class="toc-number">5.</span> <span class="toc-text">使用 Context</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置-GOMAXPROCS"><span class="toc-number">6.</span> <span class="toc-text">配置 GOMAXPROCS</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#并发编程的风险与陷阱"><span class="toc-number">7.</span> <span class="toc-text">并发编程的风险与陷阱</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#数据竞争"><span class="toc-number">7.1.</span> <span class="toc-text">数据竞争</span></a></li></ol></li></ol>
     </div>
   </span>
 </div>
@@ -139,7 +142,51 @@
   
 
   <div class="content" itemprop="articleBody">
-    
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近的项目都使用 Golang 进行开发，因为自己是从头自学，难免踩了很多坑。目前项目接近尾声，抽空对一些重要的知识点做一些总结。</p>
+<h2 id="Goroutine-与-Channel"><a href="#Goroutine-与-Channel" class="headerlink" title="Goroutine 与 Channel"></a>Goroutine 与 Channel</h2><p>什么是 Goroutine 呢？有人说它是轻量级的进程，或者干脆说是协程。其实都不太准确，协程仅仅是在一个进程中进行子程序的切换，而 Goroutine 是可以多线程多路复用的。简而言之，Goroutine 是一个轻量级的、与其他 Goroutine 运行在同一块内存地址中的并发执行的函数模型。它的成本仅仅比堆栈的分配高一点点，所以很廉价。Goroutine 可以在多个线程上通过 Goroutine 自己的调度器实现多路复用。</p>
+<p>那什么是 Channel 呢？它是程序中一种类型化的通道，即在这个虚拟通道中传输的是某种预定义的数据类型。通过相应的操作符如 <code>&lt;-</code> 可以在 Goroutine 之间发送和接收数据。 Channel 在默认情况下，接收或者发送的某端没有执行的时候会阻塞程序。Channel 可以在创建时定义缓冲大小，即缓冲区已满时才会发送缓存区的所有数据。</p>
+<p>Channel 最简单的用法就是利用其阻塞程序的特性来做 Goroutine 结束的标志。例如在 Goroutine 代码块外定义一个 Channel 接收其中的数据，当 Goroutine 代码块内部执行完毕时向 Channel 发送完成信号进而执行后续的代码。</p>
+<p>当程序有多个 Goroutine 或者多个 Channel ，他们管理起来就容易变得混乱。这时就可以考虑使用下文讲到的知识。</p>
+<h2 id="Select-的用法"><a href="#Select-的用法" class="headerlink" title="Select 的用法"></a>Select 的用法</h2><p>Select 是用来处理一个 Goroutine 等待多个 Channel 的情况的。类似于 Switch 语句，Select 的每个 case 都是一个通信操作（发送或接收），当有 case 满足条件的时候，则执行对应 case 块的代码。当没有 case 满足的时候，Select 逻辑块也会阻塞程序，当有多个 case 满足的时候，Select 会公平选择一个满足条件的 case 语句块执行。为了避免阻塞，可以使用 default 。</p>
+<h2 id="深入理解-sync-包"><a href="#深入理解-sync-包" class="headerlink" title="深入理解 sync 包"></a>深入理解 sync 包</h2><p>Golang 并发编程离不开 sync 包，里面提供了很多强大的类型和方法。常用知识点如下：</p>
+<h3 id="Map"><a href="#Map" class="headerlink" title="Map"></a>Map</h3><p>普通的 map 不是并发安全的，极容易出现竞争问题。sync.Map 是官方提供的一个并发安全的 Map，不需要自己额外处理锁、协调等操作。该类型提供了以下方法：</p>
+<ul>
+<li>Loads(): 装载键值（获取键值）</li>
+<li>Store(): 储存键值</li>
+<li>Delete(): 删除键值</li>
+<li>LoadOrStore(): 如果存在则获取键值，不存在则存储</li>
+<li>Range(): 遍历 Map</li>
+</ul>
+<p>我在项目中使用该类型替代了自己原本定义的一个全局 Map 类型，相比自己维护互斥锁或者读写锁等操作方便了不少，而且性能有优势（具体没有测试），据官方说明该 Map 类型显著减少了锁的争用。</p>
+<h3 id="Mutex"><a href="#Mutex" class="headerlink" title="Mutex"></a>Mutex</h3><p>互斥锁。对于加了锁的操作，其他的 Goroutine 在读取相应对象时会阻塞，知道互斥对象释放。频繁、大量的使用互斥锁会导致性能的降低，应该只在必须用的地方用。互斥锁使用不当还有可能造成死锁、活锁、饿死等情况，就比较复杂了。</p>
+<h3 id="RWMutex"><a href="#RWMutex" class="headerlink" title="RWMutex"></a>RWMutex</h3><p>读写锁。相较互斥锁，读写锁对性能的损耗有了极大降低，因为对于只读操作加了读锁是支持并发的，仅在写操作上加互斥锁，明显提升了效率。</p>
+<h3 id="Once"><a href="#Once" class="headerlink" title="Once"></a>Once</h3><p>Once 这个对象很有用，它是一个只执行一个操作的对象。该对象仅有一个 Do() 方法，仅当 Once 实例第一次调用 Do() 方法时，Do() 才会调用传递过来的函数。</p>
+<p>这对于要实现单例模式的代码会方便一些，定义一个 Once 对象，将要实现单例的对象的初始化方法传递给 Do()，就能保证单例的并发安全。</p>
+<p>但使用互斥锁不也能解决这个问题吗？其实不然，互斥锁的代价太高，会导致 Goroutines 无法对该变量进行并发访问。那我把它改成读写锁呢？例如：</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> mu sync.RWMutex <span class="comment">// 定义读写锁</span></span><br><span class="line"><span class="keyword">var</span> someMap <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">interface</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 并发安全的单例</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetMap</span><span class="params">(name <span class="keyword">string</span>)</span> <span class="title">interface</span></span>&#123;&#125; &#123;</span><br><span class="line">    <span class="comment">// 加读锁，并判断 someMap 是否为空</span></span><br><span class="line">    <span class="comment">// 如果不为空则获取 Map 中的值</span></span><br><span class="line">    mu.RLock()</span><br><span class="line">    <span class="keyword">if</span> someMap != <span class="literal">nil</span> &#123;</span><br><span class="line">        foo := someMap[name]</span><br><span class="line">        mu.RUnlock()</span><br><span class="line">        <span class="keyword">return</span> foo</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 注意这里无法在 else 语句将共享锁升级为互斥锁</span></span><br><span class="line">    mu.RUnlock()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果 someMap 为空加互斥锁，并初始化 someMap</span></span><br><span class="line">    mu.Lock()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 注意：必须要再一次检查是否为 nil</span></span><br><span class="line">    <span class="keyword">if</span> someMap == <span class="literal">nil</span> &#123; </span><br><span class="line">        CreateMap()</span><br><span class="line">    &#125;</span><br><span class="line">    foo := someMap[name]</span><br><span class="line">    mu.Unlock()</span><br><span class="line">    <span class="keyword">return</span> foo</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然而这种方式不觉得太复杂了吗？</p>
+<h3 id="Pool"><a href="#Pool" class="headerlink" title="Pool"></a>Pool</h3><p>Pool 是一组用来保存或者检索的临时对象。Pub() 方法的入参是空接口，意味着可以把任何类型的对象放置在池子中以复用，减轻垃圾回收器的压力，正确的使用能很轻松的构建高效、线程安全的自由列表。</p>
+<h3 id="WaitGroup"><a href="#WaitGroup" class="headerlink" title="WaitGroup"></a>WaitGroup</h3><p>WaitGroup 适用于等待多个 Goroutine 完成的逻辑下使用，控制多个 Goroutine 之间的同步。每新建一个 Goroutine 就可以调用 WaitGroup.Add() 来增加需要等待的 Goroutine 数量，当每个 Goroutine 都运行完毕时各自调用 Done() ，可以在程序的外层调用 Wait() 以阻塞程序直到所有 Goroutine 都调用了 Done()。 </p>
+<p>这样就可以在程序中使每个 WaitGroup 之间是同步的，但是 WaitGroup 之内的 Goroutine 是异步的。</p>
+<h2 id="使用-Context"><a href="#使用-Context" class="headerlink" title="使用 Context"></a>使用 Context</h2><p>与 WaitGroup 不同，Context 实现了对串行的 Goroutine 的跟踪和控制，比如一个 Goroutine 在运行过程中派生出了其他 Goroutine，这些派生出的 Goroutine 又派生出了其他 Goroutine，这种 Goroutine 的关系链使用之前的 Channel + Select 来维护会使得程序变得异常复杂。而使用 Context 上下文来实现 Goroutine 间截止时间、取消信号或其他变量的共享和传递会变得简单。</p>
+<p>Context 有四种方法来派生出不同的上下文：</p>
+<ul>
+<li>WithCancel: 传递取消信号</li>
+<li>WithDeadline: 传递截止时间</li>
+<li>WithTimeout: 传递超时信号</li>
+<li>WithValue: 传递其他值</li>
+</ul>
+<p>例如 WithCancel 派生出的上下文，在对应 Goroutine 中调用 cancel() 会使所有同一上下文派生出的所有 Goroutine 关闭，在派生出的 Goroutine 中可以通过监听 ctx.Done() 来判断是否关闭 Goroutine。</p>
+<p>Context 还有许多其他的用途，在 gRPC 、gin 中大量运用了 Context。Context 是并发安全的，所以可以放心的在 Goroutines 之间传递。</p>
+<h2 id="配置-GOMAXPROCS"><a href="#配置-GOMAXPROCS" class="headerlink" title="配置 GOMAXPROCS"></a>配置 GOMAXPROCS</h2><p>GOMAXPROCS 变量限制了 Goroutine 最多能使用的线程数。默认是等于机器的 CPU 核数，一般多线程应用最佳的线程数大概为 CPU 核数 + 2 ，再多的线程就会带来额外的调度开销导致程序变慢。不过具体问题具体分析，部分程序调高这个值也能带来显著的性能提升。</p>
+<p>参考：<a href="https://colobu.com/2017/10/11/interesting-things-about-GOMAXPROCS/" target="_blank" rel="noopener">https://colobu.com/2017/10/11/interesting-things-about-GOMAXPROCS/</a></p>
+<h2 id="并发编程的风险与陷阱"><a href="#并发编程的风险与陷阱" class="headerlink" title="并发编程的风险与陷阱"></a>并发编程的风险与陷阱</h2><h3 id="数据竞争"><a href="#数据竞争" class="headerlink" title="数据竞争"></a>数据竞争</h3><p>解决思路：</p>
+<ul>
+<li>不要去写变量</li>
+<li>避免从多个 Goroutine 访问变量<br>  这也就是官方提倡的：“不要使用共享数据来通信，而是使用通信来共享数据” ,变量仅由单个 Goroutine 来维护，其他 Goroutine 不能直接访问变量，仅可以通过使用 Channel 来发送请求给指定的 Goroutine 来查询更新变量。</li>
+<li>加锁控制<br>  可以视具体情况选择使用互斥锁或读写锁。</li>
+</ul>
+
   </div>
 </article>
 
@@ -171,7 +218,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Goroutine-与-Channel"><span class="toc-number">2.</span> <span class="toc-text">Goroutine 与 Channel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Select-的用法"><span class="toc-number">3.</span> <span class="toc-text">Select 的用法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#深入理解-sync-包"><span class="toc-number">4.</span> <span class="toc-text">深入理解 sync 包</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Map"><span class="toc-number">4.1.</span> <span class="toc-text">Map</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Mutex"><span class="toc-number">4.2.</span> <span class="toc-text">Mutex</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RWMutex"><span class="toc-number">4.3.</span> <span class="toc-text">RWMutex</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Once"><span class="toc-number">4.4.</span> <span class="toc-text">Once</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pool"><span class="toc-number">4.5.</span> <span class="toc-text">Pool</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#WaitGroup"><span class="toc-number">4.6.</span> <span class="toc-text">WaitGroup</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用-Context"><span class="toc-number">5.</span> <span class="toc-text">使用 Context</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置-GOMAXPROCS"><span class="toc-number">6.</span> <span class="toc-text">配置 GOMAXPROCS</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#并发编程的风险与陷阱"><span class="toc-number">7.</span> <span class="toc-text">并发编程的风险与陷阱</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#数据竞争"><span class="toc-number">7.1.</span> <span class="toc-text">数据竞争</span></a></li></ol></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">
