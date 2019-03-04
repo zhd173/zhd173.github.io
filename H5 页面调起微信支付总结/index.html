@@ -10,7 +10,7 @@
 <meta name="keywords" content="python">
 <meta property="og:type" content="article">
 <meta property="og:title" content="H5页面调起微信支付总结">
-<meta property="og:url" content="http://zhddev.cc/H5页面调起微信支付总结/index.html">
+<meta property="og:url" content="http://zhddev.cc/H5 页面调起微信支付总结/index.html">
 <meta property="og:site_name" content="海东的博客">
 <meta property="og:description" content="最近的工作是一个微信公众号的开发项目。有个小需求是在公众号内的H5页面调起微信支付，这里简单概括一下开发流程。详细的步骤可以直接查看微信支付官方开发文档。 前期准备在开发之前需要准备一个拥有支付权限的微信公众号。下文以普通的商户服务号为例。服务号开通微信支付权限之后，会发邮件告知以下信息： * 微信支付商户号（MCH_ID） * 微信公众账号ID（APP_ID） * 微信支付API秘钥（MCK_K">
 <meta property="og:locale" content="en">
@@ -89,16 +89,16 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/H5页面调起微信支付总结/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/H5页面调起微信支付总结/&text=H5页面调起微信支付总结"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/H5页面调起微信支付总结/&is_video=false&description=H5页面调起微信支付总结"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=H5页面调起微信支付总结&body=Check out this article: http://zhddev.cc/H5页面调起微信支付总结/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/H5页面调起微信支付总结/&name=H5页面调起微信支付总结&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/H5 页面调起微信支付总结/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/H5 页面调起微信支付总结/&text=H5页面调起微信支付总结"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/H5 页面调起微信支付总结/&is_video=false&description=H5页面调起微信支付总结"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=H5页面调起微信支付总结&body=Check out this article: http://zhddev.cc/H5 页面调起微信支付总结/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/H5 页面调起微信支付总结/&name=H5页面调起微信支付总结&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -225,16 +225,16 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/H5页面调起微信支付总结/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/H5页面调起微信支付总结/&text=H5页面调起微信支付总结"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/H5页面调起微信支付总结/&is_video=false&description=H5页面调起微信支付总结"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=H5页面调起微信支付总结&body=Check out this article: http://zhddev.cc/H5页面调起微信支付总结/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/H5页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/H5页面调起微信支付总结/&name=H5页面调起微信支付总结&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/H5 页面调起微信支付总结/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/H5 页面调起微信支付总结/&text=H5页面调起微信支付总结"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/H5 页面调起微信支付总结/&is_video=false&description=H5页面调起微信支付总结"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=H5页面调起微信支付总结&body=Check out this article: http://zhddev.cc/H5 页面调起微信支付总结/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/H5 页面调起微信支付总结/&title=H5页面调起微信支付总结"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/H5 页面调起微信支付总结/&name=H5页面调起微信支付总结&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
