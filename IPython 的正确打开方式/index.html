@@ -14,7 +14,7 @@
 <meta property="og:site_name" content="海东的博客">
 <meta property="og:description" content="前言接触 IPython 其实已经很久了，但一直把它当做简单的 Python Shell 去用，并没有深入的研究过。直到今天调试程序的时候，发现每次修改完某个文件，都需要退出然后再进入 IPython 环境，重新导入一次模块才会生效。来回几次感觉自己特别傻，这样调试一点也不“优雅”，Google 了下才发现 IPython 里有个 autoreload 命令，可以自动监测文件改动，然后重新载入，这">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2019-03-04T11:24:14.940Z">
+<meta property="og:updated_time" content="2019-03-07T11:12:09.730Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="IPython 的正确打开方式">
 <meta name="twitter:description" content="前言接触 IPython 其实已经很久了，但一直把它当做简单的 Python Shell 去用，并没有深入的研究过。直到今天调试程序的时候，发现每次修改完某个文件，都需要退出然后再进入 IPython 环境，重新导入一次模块才会生效。来回几次感觉自己特别傻，这样调试一点也不“优雅”，Google 了下才发现 IPython 里有个 autoreload 命令，可以自动监测文件改动，然后重新载入，这">
@@ -103,7 +103,7 @@
 
     </div>
     <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#自动重载"><span class="toc-number">2.</span> <span class="toc-text">自动重载</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#常用魔法命令"><span class="toc-number">3.</span> <span class="toc-text">常用魔法命令</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#自动重载"><span class="toc-number">2.</span> <span class="toc-text">自动重载</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#常用命令"><span class="toc-number">3.</span> <span class="toc-text">常用命令</span></a></li></ol>
     </div>
   </span>
 </div>
@@ -152,7 +152,7 @@
 <p>在配置文件中做如下修改：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## lines of code to run at IPython startup.</span></span><br><span class="line">c.InteractiveShellApp.exec_lines = [<span class="string">'autoreload 2'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">## A list of dotted module names of IPython extensions to load.</span></span><br><span class="line">c.InteractiveShellApp.extensions = [<span class="string">'autoreload'</span>]</span><br></pre></td></tr></table></figure>
 <p>这样就可以优雅的调试了😁</p>
-<h1 id="常用魔法命令"><a href="#常用魔法命令" class="headerlink" title="常用魔法命令"></a>常用魔法命令</h1><p>下面介绍一些常用的魔术命令:</p>
+<h1 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h1><p>下面介绍一些常用的命令:</p>
 <pre><code>- run       运行 Python 脚本，每次都从磁盘读取，和导入模块不同
 - edit      调用编辑器进行编辑（可以配置是 Vim 还是 Emacs）
 - debug     调用 pdb 调试程序，可以通过参数设置断点
@@ -201,7 +201,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#自动重载"><span class="toc-number">2.</span> <span class="toc-text">自动重载</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#常用魔法命令"><span class="toc-number">3.</span> <span class="toc-text">常用魔法命令</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#自动重载"><span class="toc-number">2.</span> <span class="toc-text">自动重载</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#常用命令"><span class="toc-number">3.</span> <span class="toc-text">常用命令</span></a></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">
