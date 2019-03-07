@@ -6,18 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="前言18年9月，公司决定重构合作方的比特币交易所的项目。 原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx等。在运行了一年左右出现了各种各样的问题：  产品快速迭代，缺乏合理的架构合计 原有系统性能出现瓶颈，生产事故也比较多 数据库优化方面做的较差，索引不合理、慢查询较多 缺乏功能完善的运营后台管理系">
+    <meta name="description" content="前言18年9月，公司决定重构合作方的比特币交易所的项目。 原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx 等。在运行了一年左右出现了各种各样的问题：  产品快速迭代，缺乏合理的架构合计 原有系统性能出现瓶颈，生产事故也比较多 数据库优化方面做的较差，索引不合理、慢查询较多 缺乏功能完善的运营后台管理">
 <meta name="keywords" content="golang,blockchain">
 <meta property="og:type" content="article">
 <meta property="og:title" content="交易所项目重构总结">
 <meta property="og:url" content="http://zhddev.cc/交易所项目重构总结/index.html">
 <meta property="og:site_name" content="海东的博客">
-<meta property="og:description" content="前言18年9月，公司决定重构合作方的比特币交易所的项目。 原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx等。在运行了一年左右出现了各种各样的问题：  产品快速迭代，缺乏合理的架构合计 原有系统性能出现瓶颈，生产事故也比较多 数据库优化方面做的较差，索引不合理、慢查询较多 缺乏功能完善的运营后台管理系">
+<meta property="og:description" content="前言18年9月，公司决定重构合作方的比特币交易所的项目。 原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx 等。在运行了一年左右出现了各种各样的问题：  产品快速迭代，缺乏合理的架构合计 原有系统性能出现瓶颈，生产事故也比较多 数据库优化方面做的较差，索引不合理、慢查询较多 缺乏功能完善的运营后台管理">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2019-03-07T10:57:37.473Z">
+<meta property="og:updated_time" content="2019-03-07T11:02:26.250Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="交易所项目重构总结">
-<meta name="twitter:description" content="前言18年9月，公司决定重构合作方的比特币交易所的项目。 原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx等。在运行了一年左右出现了各种各样的问题：  产品快速迭代，缺乏合理的架构合计 原有系统性能出现瓶颈，生产事故也比较多 数据库优化方面做的较差，索引不合理、慢查询较多 缺乏功能完善的运营后台管理系">
+<meta name="twitter:description" content="前言18年9月，公司决定重构合作方的比特币交易所的项目。 原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx 等。在运行了一年左右出现了各种各样的问题：  产品快速迭代，缺乏合理的架构合计 原有系统性能出现瓶颈，生产事故也比较多 数据库优化方面做的较差，索引不合理、慢查询较多 缺乏功能完善的运营后台管理">
     
     
         
@@ -103,7 +103,7 @@
 
     </div>
     <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#重构"><span class="toc-number">2.</span> <span class="toc-text">重构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#架构设计"><span class="toc-number">2.1.</span> <span class="toc-text">架构设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#技术选型"><span class="toc-number">2.2.</span> <span class="toc-text">技术选型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#子服务说明"><span class="toc-number">2.3.</span> <span class="toc-text">子服务说明</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#撮合引擎"><span class="toc-number">2.3.1.</span> <span class="toc-text">撮合引擎</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#行情处理"><span class="toc-number">2.3.2.</span> <span class="toc-text">行情处理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#行情推送"><span class="toc-number">2.3.3.</span> <span class="toc-text">行情推送</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CI-CD"><span class="toc-number">2.4.</span> <span class="toc-text">CI/CD</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#问题"><span class="toc-number">2.5.</span> <span class="toc-text">问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#技术总结"><span class="toc-number">3.</span> <span class="toc-text">技术总结</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#重构"><span class="toc-number">2.</span> <span class="toc-text">重构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#架构设计"><span class="toc-number">2.1.</span> <span class="toc-text">架构设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#技术选型"><span class="toc-number">2.2.</span> <span class="toc-text">技术选型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#子服务说明"><span class="toc-number">2.3.</span> <span class="toc-text">子服务说明</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#撮合引擎"><span class="toc-number">2.3.1.</span> <span class="toc-text">撮合引擎</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#行情处理"><span class="toc-number">2.3.2.</span> <span class="toc-text">行情处理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#行情推送"><span class="toc-number">2.3.3.</span> <span class="toc-text">行情推送</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CI-CD"><span class="toc-number">2.4.</span> <span class="toc-text">CI/CD</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#问题"><span class="toc-number">2.5.</span> <span class="toc-text">问题</span></a></li></ol></li></ol>
     </div>
   </span>
 </div>
@@ -143,7 +143,7 @@
 
   <div class="content" itemprop="articleBody">
     <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>18年9月，公司决定重构合作方的比特币交易所的项目。</p>
-<p>原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx等。在运行了一年左右出现了各种各样的问题：</p>
+<p>原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx 等。在运行了一年左右出现了各种各样的问题：</p>
 <ul>
 <li>产品快速迭代，缺乏合理的架构合计</li>
 <li>原有系统性能出现瓶颈，生产事故也比较多</li>
@@ -188,7 +188,7 @@
 <h4 id="行情推送"><a href="#行情推送" class="headerlink" title="行情推送"></a>行情推送</h4><p>行情在更新完毕后，都通过 RabbitMQ 的 Pub/Sub 推送到相应的 Exchange 上。由 Exchange 广播到对应的 Sub 端。行情是通过 WebSocket 推送的。刚开始用 gin 开发的 Web Server 来做 ws 服务器，使用 gorilla/websocket 这个库。给每个客户端只开一个 ws 连接，客户端通过发送消息订阅。</p>
 <p>客户端与服务端通过 Ping 消息做心跳检测，2~3 个心跳没有回复的时候就主动断开连接。</p>
 <p>程序刚开始跑自己没发现什么问题，后来测试环境跑了几天后发现貌似有内存泄露的问题。搞的我有点小紧张，通过 pprof 检测发现是 gorilla/websocket 这个库的 bufio 占用很高。没有释放，随着连接数的增加而增加。后来打算替换为 gobwas/ws 解决。具体这里推荐一份演讲：</p>
-<p>[1m-go-websocket]<a href="https://www.youtube.com/watch?v=LI1YTFMi8W4" target="_blank" rel="noopener">https://www.youtube.com/watch?v=LI1YTFMi8W4</a></p>
+<p><a href="https://www.youtube.com/watch?v=LI1YTFMi8W4" target="_blank" rel="noopener">1m-go-websocket</a></p>
 <h3 id="CI-CD"><a href="#CI-CD" class="headerlink" title="CI/CD"></a>CI/CD</h3><p>CI 主要是通过 gitlab-ci ，自动构建环境、lint检查、跑单元测试等。</p>
 <p>CD 的话麻烦一点，gitlab-ci 配合 ansible roles + supervisor 来部署。除了编写 ansible roles , gitlab-ci 里需要配置好相关的 ssh-agent ，因为我们的测试环境是需要 ssh-tunnel 来登录，会麻烦一些。</p>
 <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><ul>
@@ -197,9 +197,6 @@
 <li>行情处理的并发问题（数据竞争）</li>
 <li>百万级 ws 连接的优化</li>
 <li>自动上下币、对接区块链的流程未完成</li>
-</ul>
-<h2 id="技术总结"><a href="#技术总结" class="headerlink" title="技术总结"></a>技术总结</h2><ul>
-<li>微服务项目中尽量统一开发语言，否则会来带各种各样的兼容问题</li>
 </ul>
 
   </div>
@@ -233,7 +230,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#重构"><span class="toc-number">2.</span> <span class="toc-text">重构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#架构设计"><span class="toc-number">2.1.</span> <span class="toc-text">架构设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#技术选型"><span class="toc-number">2.2.</span> <span class="toc-text">技术选型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#子服务说明"><span class="toc-number">2.3.</span> <span class="toc-text">子服务说明</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#撮合引擎"><span class="toc-number">2.3.1.</span> <span class="toc-text">撮合引擎</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#行情处理"><span class="toc-number">2.3.2.</span> <span class="toc-text">行情处理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#行情推送"><span class="toc-number">2.3.3.</span> <span class="toc-text">行情推送</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CI-CD"><span class="toc-number">2.4.</span> <span class="toc-text">CI/CD</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#问题"><span class="toc-number">2.5.</span> <span class="toc-text">问题</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#技术总结"><span class="toc-number">3.</span> <span class="toc-text">技术总结</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#重构"><span class="toc-number">2.</span> <span class="toc-text">重构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#架构设计"><span class="toc-number">2.1.</span> <span class="toc-text">架构设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#技术选型"><span class="toc-number">2.2.</span> <span class="toc-text">技术选型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#子服务说明"><span class="toc-number">2.3.</span> <span class="toc-text">子服务说明</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#撮合引擎"><span class="toc-number">2.3.1.</span> <span class="toc-text">撮合引擎</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#行情处理"><span class="toc-number">2.3.2.</span> <span class="toc-text">行情处理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#行情推送"><span class="toc-number">2.3.3.</span> <span class="toc-text">行情推送</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CI-CD"><span class="toc-number">2.4.</span> <span class="toc-text">CI/CD</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#问题"><span class="toc-number">2.5.</span> <span class="toc-text">问题</span></a></li></ol></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">
