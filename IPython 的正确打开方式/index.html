@@ -10,7 +10,7 @@
 <meta name="keywords" content="python">
 <meta property="og:type" content="article">
 <meta property="og:title" content="IPython 的正确打开方式">
-<meta property="og:url" content="http://zhddev.cc/IPython 的正确打开方式/index.html">
+<meta property="og:url" content="https://haidong.dev/IPython 的正确打开方式/index.html">
 <meta property="og:site_name" content="海东的博客">
 <meta property="og:description" content="前言接触 IPython 其实已经很久了，但一直把它当做简单的 Python Shell 去用，并没有深入的研究过。直到今天调试程序的时候，发现每次修改完某个文件，都需要退出然后再进入 IPython 环境，重新导入一次模块才会生效。来回几次感觉自己特别傻，这样调试一点也不“优雅”，Google 了下才发现 IPython 里有个 autoreload 命令，可以自动监测文件改动，然后重新载入，这">
 <meta property="og:locale" content="en">
@@ -89,16 +89,16 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/IPython 的正确打开方式/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/IPython 的正确打开方式/&text=IPython 的正确打开方式"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/IPython 的正确打开方式/&is_video=false&description=IPython 的正确打开方式"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IPython 的正确打开方式&body=Check out this article: http://zhddev.cc/IPython 的正确打开方式/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/IPython 的正确打开方式/&name=IPython 的正确打开方式&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/IPython 的正确打开方式/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://haidong.dev/IPython 的正确打开方式/&text=IPython 的正确打开方式"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/IPython 的正确打开方式/&is_video=false&description=IPython 的正确打开方式"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=IPython 的正确打开方式&body=Check out this article: https://haidong.dev/IPython 的正确打开方式/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://haidong.dev/IPython 的正确打开方式/&name=IPython 的正确打开方式&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -206,16 +206,16 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/IPython 的正确打开方式/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/IPython 的正确打开方式/&text=IPython 的正确打开方式"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/IPython 的正确打开方式/&is_video=false&description=IPython 的正确打开方式"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=IPython 的正确打开方式&body=Check out this article: http://zhddev.cc/IPython 的正确打开方式/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/IPython 的正确打开方式/&name=IPython 的正确打开方式&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/IPython 的正确打开方式/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://haidong.dev/IPython 的正确打开方式/&text=IPython 的正确打开方式"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/IPython 的正确打开方式/&is_video=false&description=IPython 的正确打开方式"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=IPython 的正确打开方式&body=Check out this article: https://haidong.dev/IPython 的正确打开方式/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://haidong.dev/IPython 的正确打开方式/&title=IPython 的正确打开方式"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://haidong.dev/IPython 的正确打开方式/&name=IPython 的正确打开方式&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>

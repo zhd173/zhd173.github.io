@@ -10,7 +10,7 @@
 <meta name="keywords" content="golang">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Golang 并发编程实践">
-<meta property="og:url" content="http://zhddev.cc/Golang 并发编程实践/index.html">
+<meta property="og:url" content="https://haidong.dev/Golang 并发编程实践/index.html">
 <meta property="og:site_name" content="海东的博客">
 <meta property="og:description" content="前言最近的项目都使用 Golang 进行开发，因为自己是从头自学，难免踩了很多坑。目前项目接近尾声，抽空对一些重要的知识点做一些总结。 Goroutine 与 Channel什么是 Goroutine 呢？有人说它是轻量级的进程，或者干脆说是协程。其实都不太准确，协程仅仅是在一个进程中进行子程序的切换，而 Goroutine 是可以多线程多路复用的。简而言之，Goroutine 是一个轻量级的、与">
 <meta property="og:locale" content="en">
@@ -89,16 +89,16 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/Golang 并发编程实践/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/Golang 并发编程实践/&text=Golang 并发编程实践"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/Golang 并发编程实践/&is_video=false&description=Golang 并发编程实践"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=Golang 并发编程实践&body=Check out this article: http://zhddev.cc/Golang 并发编程实践/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/Golang 并发编程实践/&name=Golang 并发编程实践&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/Golang 并发编程实践/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://haidong.dev/Golang 并发编程实践/&text=Golang 并发编程实践"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/Golang 并发编程实践/&is_video=false&description=Golang 并发编程实践"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Golang 并发编程实践&body=Check out this article: https://haidong.dev/Golang 并发编程实践/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://haidong.dev/Golang 并发编程实践/&name=Golang 并发编程实践&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -223,16 +223,16 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/Golang 并发编程实践/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/Golang 并发编程实践/&text=Golang 并发编程实践"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/Golang 并发编程实践/&is_video=false&description=Golang 并发编程实践"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=Golang 并发编程实践&body=Check out this article: http://zhddev.cc/Golang 并发编程实践/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/Golang 并发编程实践/&name=Golang 并发编程实践&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/Golang 并发编程实践/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://haidong.dev/Golang 并发编程实践/&text=Golang 并发编程实践"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/Golang 并发编程实践/&is_video=false&description=Golang 并发编程实践"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Golang 并发编程实践&body=Check out this article: https://haidong.dev/Golang 并发编程实践/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://haidong.dev/Golang 并发编程实践/&title=Golang 并发编程实践"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://haidong.dev/Golang 并发编程实践/&name=Golang 并发编程实践&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>

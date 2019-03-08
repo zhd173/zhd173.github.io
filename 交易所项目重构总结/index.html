@@ -10,7 +10,7 @@
 <meta name="keywords" content="golang,blockchain">
 <meta property="og:type" content="article">
 <meta property="og:title" content="交易所项目重构总结">
-<meta property="og:url" content="http://zhddev.cc/交易所项目重构总结/index.html">
+<meta property="og:url" content="https://haidong.dev/交易所项目重构总结/index.html">
 <meta property="og:site_name" content="海东的博客">
 <meta property="og:description" content="前言18年9月，公司决定重构合作方的比特币交易所的项目。 原有项目主要使用 Java Spring Cloud 和 CPP 构建，用到的组件主要有 ActiveMQ、Redis、MariaDB、Nginx 等。在运行了一年左右出现了各种各样的问题：  产品快速迭代，缺乏合理的架构合计 原有系统性能出现瓶颈，生产事故也比较多 数据库优化方面做的较差，索引不合理、慢查询较多 缺乏功能完善的运营后台管理">
 <meta property="og:locale" content="en">
@@ -89,16 +89,16 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/交易所项目重构总结/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/交易所项目重构总结/&text=交易所项目重构总结"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/交易所项目重构总结/&is_video=false&description=交易所项目重构总结"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=交易所项目重构总结&body=Check out this article: http://zhddev.cc/交易所项目重构总结/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/交易所项目重构总结/&name=交易所项目重构总结&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/交易所项目重构总结/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://haidong.dev/交易所项目重构总结/&text=交易所项目重构总结"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/交易所项目重构总结/&is_video=false&description=交易所项目重构总结"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=交易所项目重构总结&body=Check out this article: https://haidong.dev/交易所项目重构总结/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://haidong.dev/交易所项目重构总结/&name=交易所项目重构总结&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -235,16 +235,16 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/交易所项目重构总结/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/交易所项目重构总结/&text=交易所项目重构总结"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/交易所项目重构总结/&is_video=false&description=交易所项目重构总结"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=交易所项目重构总结&body=Check out this article: http://zhddev.cc/交易所项目重构总结/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/交易所项目重构总结/&name=交易所项目重构总结&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/交易所项目重构总结/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://haidong.dev/交易所项目重构总结/&text=交易所项目重构总结"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/交易所项目重构总结/&is_video=false&description=交易所项目重构总结"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=交易所项目重构总结&body=Check out this article: https://haidong.dev/交易所项目重构总结/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://haidong.dev/交易所项目重构总结/&title=交易所项目重构总结"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://haidong.dev/交易所项目重构总结/&name=交易所项目重构总结&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
