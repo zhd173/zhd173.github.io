@@ -3,6 +3,21 @@
   
     
     <entry>
+      <title>Golang 程序的诊断</title>
+      <link href="//Golang%20%E7%A8%8B%E5%BA%8F%E7%9A%84%E8%AF%8A%E6%96%AD/"/>
+      <url>//Golang%20%E7%A8%8B%E5%BA%8F%E7%9A%84%E8%AF%8A%E6%96%AD/</url>
+      <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。接下来系统的总结一下。</p><h2 id="概要分析（Profiling）"><a href="#概要分析（Profiling）" class="headerlink" title="概要分析（Profiling）"></a>概要分析（Profiling）</h2><p>Go 程序可以在运行时提供 <code>pprof</code> 所需的分析数据，<code>pprof</code> 是 Go 的一款可视化工具，用以生成各种性能分析图。</p><p><code>runtime/pprof</code> 包提供了以下几种类型的分析：</p><ul><li>cpu: 统计程序花费的 CPU 时间(排除等待和IO时间)</li><li>heap: 堆检测。报告内存的分配，监视当前和历史内存的使用情况，检查内存泄露</li><li>threadcreate: 检测代码中创建线程的部分</li><li>goroutine: 报告所有 Goroutine 的堆栈跟踪</li><li>mutex: 报告锁的争用情况</li></ul><p>在 Linux 系统上，还可以使用 <a href="https://perf.wiki.kernel.org/index.php/Tutorial" target="_blank" rel="noopener">perf tools</a> 来更深入的分析 cgo/SWIG 代码和内核的性能问题。在 macOS 上可以使用 <a href="https://help.apple.com/instruments/mac/current/" target="_blank" rel="noopener">Instruments</a> 套件来分析 Go 程序。</p><h2 id="跟踪分析（Tracing）"><a href="#跟踪分析（Tracing）" class="headerlink" title="跟踪分析（Tracing）"></a>跟踪分析（Tracing）</h2><h2 id="调试（Debugging）"><a href="#调试（Debugging）" class="headerlink" title="调试（Debugging）"></a>调试（Debugging）</h2><h2 id="运行时统计（Runtime-Statistics-and-Events）"><a href="#运行时统计（Runtime-Statistics-and-Events）" class="headerlink" title="运行时统计（Runtime Statistics and Events）"></a>运行时统计（Runtime Statistics and Events）</h2><h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol><li><a href="https://golang.org/doc/diagnostics.html" target="_blank" rel="noopener">Golang Diagnostics</a></li></ol>]]></content>
+      
+      
+        <tags>
+            
+            <tag> golang </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    <entry>
       <title>SSH 用法总结</title>
       <link href="//SSH%20%E9%AB%98%E7%BA%A7%E7%94%A8%E6%B3%95%E6%80%BB%E7%BB%93/"/>
       <url>//SSH%20%E9%AB%98%E7%BA%A7%E7%94%A8%E6%B3%95%E6%80%BB%E7%BB%93/</url>
@@ -188,7 +203,7 @@
       <title>关于练字</title>
       <link href="//%E5%85%B3%E4%BA%8E%E7%BB%83%E5%AD%97/"/>
       <url>//%E5%85%B3%E4%BA%8E%E7%BB%83%E5%AD%97/</url>
-      <content type="html"><![CDATA[<h1 id="关于练字"><a href="#关于练字" class="headerlink" title="关于练字"></a>关于练字</h1><p>我从小就喜欢练字，兴趣大概始于四岁。那时候和爷爷奶奶一起住，爷爷做农活的时候总带着我。每日在往返家里那几块老地的时候，我总是跑在前面，在田埂上用随地捡的木棍练习爷爷教的字。一笔一划的细心写完，爷爷正好走到跟前，端详之后总会说哪里不对，哪里写反了（我总是写反“四”字里面的那两笔😑）。在屋里得空的时候，也会用废报纸、废书教我写毛笔字。后来上了学，小学语文老师的板书写得特别漂亮。在我们读课文的时候，她总会在黑板上信手写一些诗句然后擦掉，如此重复。我总会在那时看老师写字而忘记背课文。所以每天的田字格作业我都会很认真的写，因为我想和老师写得一样好看。如今大学毕业，工作也已经快两年，闲来无事的时候也喜欢随便拿些纸笔，和小学语文老师那样随手写一些字句。这样能使人心静。</p><p>以前总对草书很感兴趣，高中的时候临过老家县城一位小有名气的爷爷出的字帖，感觉连笔写出来的字都特别酷，尤其在别人都看不懂的时候😀。现在想来，那时候真是年少不懂事。在自己还不能完全掌控手里那根笔的时候，盲目去追求连笔、精简笔画，久而久之自己的字就会变形，整体的章法也变的潦草。人也慢慢变的浮躁、急于求成。就像你偶然发现了一条捷径，手足舞蹈地走到头，在向众人炫耀你已经到达终点的时候，发现自己竟然走的是一条错路，像小丑一样。<strong>所以不能忽视基础，不能着急，不能炫耀，不管写字还是工作。</strong></p><p>这篇文章本想只做一份字帖的清单，供自己用的时候查阅。没想到关于写字自己也可以说这么多。前面说道不能忽视基础，在写字方面，就是不能忽视真楷。我不知从什么时候起，慢慢的开始喜欢楷书，认为那才是真正的美。在公众号、抖音上看到一些所谓的“丑书”，看到一些信笔的“涂鸦”，总是无感。反而是那些认真写楷书的人，我反而会更欣赏。当然不是说其他字体不美，只是自己的基础未到，写行书、草书总会感觉少了很多内在的东西，华而不实。</p><h1 id="关于字帖"><a href="#关于字帖" class="headerlink" title="关于字帖"></a>关于字帖</h1><p>这里罗列一些自己喜欢的字帖。只有楷书。</p><pre><code>- 《多宝塔碑》颜真卿- 《颜卿礼碑》颜真卿- 《灵飞经》钟绍京- 《琴赋》文征明- 《吴氏重修祠堂记》徐元礼- 《滕王阁序》高垲</code></pre>]]></content>
+      <content type="html"><![CDATA[<h1 id="关于练字"><a href="#关于练字" class="headerlink" title="关于练字"></a>关于练字</h1><p>我从小就喜欢练字，兴趣大概始于四岁。那时候和爷爷奶奶一起住，爷爷做农活的时候总带着我。每日在往返家里那几块老地的时候，我总是跑在前面，在田埂上用随地捡的麦梗树枝练习爷爷教的字。一笔一划的细心写完，爷爷正好走到跟前，端详之后总会说哪里不对，哪里写反了（比如我总是写反“四”字里面的那两笔）。<br>爷爷在屋里得空的时候，也会用废报纸、废书教我写毛笔字。后来上了学，小学语文老师的板书写得特别漂亮。在我们读课文的时候，她会在黑板上信手写一些诗句然后擦掉，如此重复。我时常看老师写字而忘记背课文。每天的田字格作业我都会很认真的写，想和老师写得一样好看。<br>如今大学毕业，工作已经快两年，闲来无事的时候喜欢随便拿些纸笔，和小学语文老师那样随手写一些字句。这样能使人心静，不会有大城市普遍都有的焦虑了。</p><p>以前总对草书很感兴趣，高中的时候临过老家县城一位小有名气的爷爷出的字帖，感觉连笔写出来的字都好看，尤其在别人都看不懂的时候。现在想来，那时候真是不懂事。在自己还没有完全打好基础的时候，盲目去追求连笔、精简笔画，久而久之字就会变形，整体的章法也变的潦草。人也开始变的浮躁、急于求成。<br>就像你偶然发现了一条捷径，手足舞蹈地走到头，在向众人炫耀你已经到达终点的时候，发现自己竟然走的是一条错路，像小丑一样。</p><p><strong>所以不能忽视基础，不能着急，不能炫耀，不管写字还是工作。</strong></p><p>这篇文章本想只做一份字帖的清单，供参考。没想到关于写字自己也可以说这么多。前面说道不能忽视基础，在写字方面，就是不能忽视真楷。近两年，我越来越喜欢楷书，认为那才是真正的美。在公众号、抖音上看到一些所谓的 “丑书” ，看到一些信笔的“涂鸦”，总是无感。反而是那些认真写楷书的人，我会更欣赏。当然不是说其他字体不美，只是自己的功力未到，写行书、草书总会感觉少了很多内在的东西，华而不实。</p><h1 id="关于字帖"><a href="#关于字帖" class="headerlink" title="关于字帖"></a>关于字帖</h1><p>这里罗列一些自己喜欢的字帖。只有楷书。</p><pre><code>- 《多宝塔碑》颜真卿- 《颜卿礼碑》颜真卿- 《灵飞经》钟绍京- 《琴赋》文征明- 《吴氏重修祠堂记》徐元礼- 《滕王阁序》高垲</code></pre>]]></content>
       
       
         <tags>
