@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="前言SSH(Secure Shell) 是一种加密的网络传输协议。通过在网络中创建安全隧道来实现 SSH 客户端与服务端之间的连接。最常见的用途就是远程登录。 简单使用使用密码登录以下命令是使用 user 通过 1234 端口登录 host ： 1$ ssh user@host -p 1234 成功后输入用户密码即可登录。第一次登录会提示无法确认主机的真实性，只知道公钥指纹，询问是否继续。如果决定">
+<meta name="keywords" content="other">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SSH 用法总结">
+<meta property="og:url" content="http://zhddev.cc/SSH 高级用法总结/index.html">
+<meta property="og:site_name" content="海东的博客">
+<meta property="og:description" content="前言SSH(Secure Shell) 是一种加密的网络传输协议。通过在网络中创建安全隧道来实现 SSH 客户端与服务端之间的连接。最常见的用途就是远程登录。 简单使用使用密码登录以下命令是使用 user 通过 1234 端口登录 host ： 1$ ssh user@host -p 1234 成功后输入用户密码即可登录。第一次登录会提示无法确认主机的真实性，只知道公钥指纹，询问是否继续。如果决定">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2019-03-08T05:27:26.946Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SSH 用法总结">
+<meta name="twitter:description" content="前言SSH(Secure Shell) 是一种加密的网络传输协议。通过在网络中创建安全隧道来实现 SSH 客户端与服务端之间的连接。最常见的用途就是远程登录。 简单使用使用密码登录以下命令是使用 user 通过 1234 端口登录 host ： 1$ ssh user@host -p 1234 成功后输入用户密码即可登录。第一次登录会提示无法确认主机的真实性，只知道公钥指纹，询问是否继续。如果决定">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=16">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=192" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=180">
+          
+        
+    
+    <!-- title -->
+    <title>SSH 用法总结</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- persian styles -->
+    
+      <link rel="stylesheet" href="/css/rtl.css">
+    
+    <!-- rss -->
+    
+    
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/交易所项目重构总结/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/SSH 高级用法总结/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/SSH 高级用法总结/&text=SSH 用法总结"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/SSH 高级用法总结/&is_video=false&description=SSH 用法总结"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=SSH 用法总结&body=Check out this article: http://zhddev.cc/SSH 高级用法总结/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/SSH 高级用法总结/&name=SSH 用法总结&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#简单使用"><span class="toc-number">2.</span> <span class="toc-text">简单使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#使用密码登录"><span class="toc-number">2.1.</span> <span class="toc-text">使用密码登录</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用公钥登录"><span class="toc-number">2.2.</span> <span class="toc-text">使用公钥登录</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用代理-ssh-agent"><span class="toc-number">3.</span> <span class="toc-text">使用代理(ssh-agent)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简单使用代理"><span class="toc-number">3.1.</span> <span class="toc-text">简单使用代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代理转发"><span class="toc-number">3.2.</span> <span class="toc-text">代理转发</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置文件"><span class="toc-number">4.</span> <span class="toc-text">配置文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#配置-Host"><span class="toc-number">4.1.</span> <span class="toc-text">配置 Host</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常见配置项说明"><span class="toc-number">4.2.</span> <span class="toc-text">常见配置项说明</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#端口转发"><span class="toc-number">5.</span> <span class="toc-text">端口转发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#一些建议"><span class="toc-number">6.</span> <span class="toc-text">一些建议</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        SSH 用法总结
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">海东的博客</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2019-03-04T07:52:41.000Z" itemprop="datePublished">2019-03-04</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link" href="/tags/other/">other</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>SSH(Secure Shell) 是一种加密的网络传输协议。通过在网络中创建安全隧道来实现 SSH 客户端与服务端之间的连接。<br>最常见的用途就是远程登录。</p>
+<h2 id="简单使用"><a href="#简单使用" class="headerlink" title="简单使用"></a>简单使用</h2><h3 id="使用密码登录"><a href="#使用密码登录" class="headerlink" title="使用密码登录"></a>使用密码登录</h3><p>以下命令是使用 user 通过 1234 端口登录 host ：</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ ssh user@host -p <span class="number">1234</span></span><br></pre></td></tr></table></figure>
+<p>成功后输入用户密码即可登录。第一次登录会提示无法确认主机的真实性，只知道公钥指纹，询问是否继续。如果决定接受这个远程主机的公钥，则会将该 host 的公钥保存至 <code>~/.ssh/known_hosts</code> 中，下次再连接时，系统会自动识别自动跳过警告。</p>
+<h3 id="使用公钥登录"><a href="#使用公钥登录" class="headerlink" title="使用公钥登录"></a>使用公钥登录</h3><p>公钥登录的原理很简单。主要采用了非对称加密的方法，将公钥储存在远程主机上，登录时远程主机会发送一段随机字符串，收到字符串后用私钥加密再发送回去，远程主机用公钥进行解密，如果成功则握手成功，直接登录成功。</p>
+<p>本地生成好公钥后，可通过以下命令将公钥传输至远程主机：</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ ssh-<span class="built_in">copy</span>-id user@host</span><br></pre></td></tr></table></figure>
+<p>这会在远程主机的 <code>~/.ssh/authorized_keys</code> 写入发送的公钥。如果无法登录，需要检查远程主机 SSH 服务的配置文件，看是否开启了 <code>RSAAuthentication</code> <code>PubkeyAuthentication</code> 等选项。</p>
+<h2 id="使用代理-ssh-agent"><a href="#使用代理-ssh-agent" class="headerlink" title="使用代理(ssh-agent)"></a>使用代理(ssh-agent)</h2><h3 id="简单使用代理"><a href="#简单使用代理" class="headerlink" title="简单使用代理"></a>简单使用代理</h3><p>首先要了解什么是 <code>ssh-agent</code> ，<code>ssh-agent</code> 是一个帮助程序，用户追踪用户的私钥及私钥对应的密码。之后，<code>agent</code> 可以自己使用秘钥登录到其他服务器，不需要用户再次输入密码，是一种 SSO 形式。</p>
+<p>手动启动 <code>ssh-agent</code>:</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ eval `ssh-agent`</span><br></pre></td></tr></table></figure>
+<p>向 <code>agent</code> 中添加 SSH 私钥:</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 添加私钥</span><br><span class="line">$ ssh-add ~/.ssh/key</span><br><span class="line"></span><br><span class="line"># 查看已添加的私钥</span><br><span class="line">$ ssh-add -l</span><br></pre></td></tr></table></figure>
+<h3 id="代理转发"><a href="#代理转发" class="headerlink" title="代理转发"></a>代理转发</h3><p>这个是 <code>ssh-agent</code> 一个特别方便的功能。假如用户登录通过 <code>ssh-agent</code> 登录至远程主机，在远程主机的 SSH 客户端访问其他主机的 SSH 服务端。<br>例如我通过 SSH 登录至远程测试机，在测试机上拉取公司 Gitlab 上的项目，而 Gitlab 上仅配置了我本地主机的公钥，如果不使用 <code>ssh-agent</code> 的话，此时是拉不下来代码的。<br>如果使用了 <code>ssh-agent</code> 并开启了代理转发，测试机上的 SSH 客户端会将请求转发至本地的 <code>ssh-agent</code> 来处理，<br>从而避免了将私钥上传至远程主机或者在 Gitlab 中新增远程主机的公钥这些麻烦事了（当然也不安全，私钥应该牢牢掌握在自己手中）。</p>
+<p>在 <code>gitlab-ci</code> 中远程部署项目时使用代理转发很方便。</p>
+<p>如何打开代理转发：</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 客户机上在配置 SSH 时需要打开</span><br><span class="line">ForwardAgent yes</span><br><span class="line"></span><br><span class="line"># 服务机上在配置 SSH 时需要打开</span><br><span class="line">AllowAgentForwarding yes</span><br></pre></td></tr></table></figure>
+<h2 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h2><p>可以在 <code>~/.ssh/config</code> 中添加各种配置。文件没有就创建一个。</p>
+<h3 id="配置-Host"><a href="#配置-Host" class="headerlink" title="配置 Host"></a>配置 Host</h3><p>可以在配置文件中针对不同的 Host 使用不一样的配置项：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"># 使用密码登录</span><br><span class="line">Host test-host-1</span><br><span class="line">    HostName 123.123.123.123</span><br><span class="line">    User user</span><br><span class="line">    Port 222</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line"># 使用密钥登录</span><br><span class="line">Host test-host-2</span><br><span class="line">    HostName 123.123.123.111</span><br><span class="line">    User user</span><br><span class="line">    IdentityFile ~/.ssh/some-key</span><br><span class="line">    </span><br><span class="line"># 所有 Host 的共用配置</span><br><span class="line">Host *</span><br><span class="line">    AddKeyToAgent yes</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+<p>如上配置就可以很方便的使用别名登录了：</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ ssh test-host-<span class="number">1</span></span><br><span class="line"></span><br><span class="line">$ ssh test-host-<span class="number">2</span></span><br></pre></td></tr></table></figure>
+<h3 id="常见配置项说明"><a href="#常见配置项说明" class="headerlink" title="常见配置项说明"></a>常见配置项说明</h3><ul>
+<li>HostName：主机名，IP、域名皆可</li>
+<li>User: 登录用户</li>
+<li>IdentityFile: 私钥文件路径</li>
+<li>ProxyCommand: 代理命令，例如指定本地的 sock5 端口以翻墙(nc -X 5 -x localhost:1086 %h %p)</li>
+<li>ProxyJump: ssh tunnel 设置跳板机、堡垒机等</li>
+<li>ForwardAgent: 是否开启代理转发</li>
+<li>IdentitiesOnly: 只使用该选项指定的私钥，避免使用默认私钥</li>
+<li>ServerAliveInterval: 心跳间隔</li>
+<li>ServerAliveCountMax: 心跳重试次数</li>
+<li>Compression: 是否启用压缩</li>
+<li>TCPKeepAlive: TCP 保持连接不断开</li>
+<li>UseRoaming: 是否允许漫游。即从 A 机连接至 B 机，后又用相同私钥在 C 机连接 B 机，会话保持不变</li>
+<li>ControlMaster: 连接复用</li>
+<li>ControlPath: 连接复用保存的地址</li>
+<li>ControlPersist: 复用连接持续的时间</li>
+</ul>
+<p>其他的配置项可以参考 <a href="https://man.openbsd.org/ssh_config.5" target="_blank" rel="noopener">SSH 配置手册</a></p>
+<h2 id="端口转发"><a href="#端口转发" class="headerlink" title="端口转发"></a>端口转发</h2><p>有时为了安全起见，远程服务的某些端口仅限定的主机可以访问，而用户本地仅能访问那些限定的主机。这时就可以通过端口转发，通过限定的主机将远程服务的某些端口映射到本地的特定端口，从而可以在本地直接访问远程服务的某些端口。</p>
+<p>例如：</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ ssh -C -f -N -g -L <span class="number">18080</span>:<span class="number">10</span>.<span class="number">0</span>.<span class="number">0</span>.<span class="number">1</span>:<span class="number">8080</span> ssh-tunnel@<span class="number">123</span>.<span class="number">1</span>.<span class="number">1</span>.<span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>此时访问本地的 <code>18080</code> 端口就相当于用户 <code>ssh-tunnel</code> 在 <code>123.1.1.1</code> 这台主机上访问 <code>10.0.0.1:8080</code></p>
+<h2 id="一些建议"><a href="#一些建议" class="headerlink" title="一些建议"></a>一些建议</h2><ul>
+<li>尽量每个单独的服务（或主机）都用不一样的密钥对，通过 ssh config 来管理</li>
+</ul>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#前言"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#简单使用"><span class="toc-number">2.</span> <span class="toc-text">简单使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#使用密码登录"><span class="toc-number">2.1.</span> <span class="toc-text">使用密码登录</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用公钥登录"><span class="toc-number">2.2.</span> <span class="toc-text">使用公钥登录</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#使用代理-ssh-agent"><span class="toc-number">3.</span> <span class="toc-text">使用代理(ssh-agent)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#简单使用代理"><span class="toc-number">3.1.</span> <span class="toc-text">简单使用代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#代理转发"><span class="toc-number">3.2.</span> <span class="toc-text">代理转发</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#配置文件"><span class="toc-number">4.</span> <span class="toc-text">配置文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#配置-Host"><span class="toc-number">4.1.</span> <span class="toc-text">配置 Host</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#常见配置项说明"><span class="toc-number">4.2.</span> <span class="toc-text">常见配置项说明</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#端口转发"><span class="toc-number">5.</span> <span class="toc-text">端口转发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#一些建议"><span class="toc-number">6.</span> <span class="toc-text">一些建议</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://zhddev.cc/SSH 高级用法总结/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://zhddev.cc/SSH 高级用法总结/&text=SSH 用法总结"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://zhddev.cc/SSH 高级用法总结/&is_video=false&description=SSH 用法总结"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=SSH 用法总结&body=Check out this article: http://zhddev.cc/SSH 高级用法总结/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://zhddev.cc/SSH 高级用法总结/&title=SSH 用法总结"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://zhddev.cc/SSH 高级用法总结/&name=SSH 用法总结&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2019 zhd173
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-125225753-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'haidongdev';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+
