@@ -6,18 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="前言前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。接下来系统的总结一下。 概要分析（Profiling）Go 程序可以在运行时提供 pprof 所需的分析数据，pprof 是 Go 的一款可视化工具，用以生成各种性能分析图。 runtime/pprof 包提供了以下几种类型的分析：  cpu: 统计程序花费的 C">
+    <meta name="description" content="前言前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。时过已久，这里再系统的总结一下。 概要分析（Profiling）Go 程序可以在运行时提供 pprof 所需的分析数据，pprof 是 Go 的一款可视化工具，用以生成各种性能分析图。 runtime/pprof 包提供了以下几种类型的分析：  cpu: 统计程序">
 <meta name="keywords" content="golang">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Golang 程序的诊断">
 <meta property="og:url" content="http://zhddev.cc/Golang 程序的诊断/index.html">
 <meta property="og:site_name" content="海东的博客">
-<meta property="og:description" content="前言前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。接下来系统的总结一下。 概要分析（Profiling）Go 程序可以在运行时提供 pprof 所需的分析数据，pprof 是 Go 的一款可视化工具，用以生成各种性能分析图。 runtime/pprof 包提供了以下几种类型的分析：  cpu: 统计程序花费的 C">
+<meta property="og:description" content="前言前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。时过已久，这里再系统的总结一下。 概要分析（Profiling）Go 程序可以在运行时提供 pprof 所需的分析数据，pprof 是 Go 的一款可视化工具，用以生成各种性能分析图。 runtime/pprof 包提供了以下几种类型的分析：  cpu: 统计程序">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2019-03-08T07:47:33.281Z">
+<meta property="og:updated_time" content="2019-03-08T08:22:10.190Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Golang 程序的诊断">
-<meta name="twitter:description" content="前言前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。接下来系统的总结一下。 概要分析（Profiling）Go 程序可以在运行时提供 pprof 所需的分析数据，pprof 是 Go 的一款可视化工具，用以生成各种性能分析图。 runtime/pprof 包提供了以下几种类型的分析：  cpu: 统计程序花费的 C">
+<meta name="twitter:description" content="前言前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。时过已久，这里再系统的总结一下。 概要分析（Profiling）Go 程序可以在运行时提供 pprof 所需的分析数据，pprof 是 Go 的一款可视化工具，用以生成各种性能分析图。 runtime/pprof 包提供了以下几种类型的分析：  cpu: 统计程序">
     
     
         
@@ -140,7 +140,7 @@
   
 
   <div class="content" itemprop="articleBody">
-    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。接下来系统的总结一下。</p>
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间自己写的程序出现了内存泄露，排查了很久，最终在 pprof 的帮助下提早发现了问题，还有检测并发程序中的竞争情况，也很方便。时过已久，这里再系统的总结一下。</p>
 <h2 id="概要分析（Profiling）"><a href="#概要分析（Profiling）" class="headerlink" title="概要分析（Profiling）"></a>概要分析（Profiling）</h2><p>Go 程序可以在运行时提供 <code>pprof</code> 所需的分析数据，<code>pprof</code> 是 Go 的一款可视化工具，用以生成各种性能分析图。</p>
 <p><code>runtime/pprof</code> 包提供了以下几种类型的分析：</p>
 <ul>
