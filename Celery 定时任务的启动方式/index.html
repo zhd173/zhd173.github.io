@@ -6,18 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="工作中踩了一些坑，抽空整理了一下。现阶段启动 celery beat一般有两种方式: 直接启动  在生产环境中推荐使用这种方式。可以在supervisor中新增一个配置文件来启动。并在ansible配置文件中添加重启项目。   1$ celery -A proj beat   Beat 服务需要一个地方存储上次定时任务运行的时间（默认名为celerybeat-schedule，是一个本地shelv">
+    <meta name="description" content="工作中踩了一些坑，抽空整理了一下。现阶段启动 celery beat一般有两种方式: 直接启动  在生产环境中推荐使用这种方式。可以在supervisor中新增一个配置文件来启动。并在ansible配置文件中添加重启项目。   $ celery -A proj beat   Beat 服务需要一个地方存储上次定时任务运行的时间（默认名为celerybeat-schedule，是一个本地shelve">
 <meta name="keywords" content="python">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Celery 定时任务的启动方式">
 <meta property="og:url" content="https://haidong.dev/Celery 定时任务的启动方式/index.html">
 <meta property="og:site_name" content="海东的博客">
-<meta property="og:description" content="工作中踩了一些坑，抽空整理了一下。现阶段启动 celery beat一般有两种方式: 直接启动  在生产环境中推荐使用这种方式。可以在supervisor中新增一个配置文件来启动。并在ansible配置文件中添加重启项目。   1$ celery -A proj beat   Beat 服务需要一个地方存储上次定时任务运行的时间（默认名为celerybeat-schedule，是一个本地shelv">
+<meta property="og:description" content="工作中踩了一些坑，抽空整理了一下。现阶段启动 celery beat一般有两种方式: 直接启动  在生产环境中推荐使用这种方式。可以在supervisor中新增一个配置文件来启动。并在ansible配置文件中添加重启项目。   $ celery -A proj beat   Beat 服务需要一个地方存储上次定时任务运行的时间（默认名为celerybeat-schedule，是一个本地shelve">
 <meta property="og:locale" content="en">
 <meta property="og:updated_time" content="2018-09-05T06:04:04.010Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Celery 定时任务的启动方式">
-<meta name="twitter:description" content="工作中踩了一些坑，抽空整理了一下。现阶段启动 celery beat一般有两种方式: 直接启动  在生产环境中推荐使用这种方式。可以在supervisor中新增一个配置文件来启动。并在ansible配置文件中添加重启项目。   1$ celery -A proj beat   Beat 服务需要一个地方存储上次定时任务运行的时间（默认名为celerybeat-schedule，是一个本地shelv">
+<meta name="twitter:description" content="工作中踩了一些坑，抽空整理了一下。现阶段启动 celery beat一般有两种方式: 直接启动  在生产环境中推荐使用这种方式。可以在supervisor中新增一个配置文件来启动。并在ansible配置文件中添加重启项目。   $ celery -A proj beat   Beat 服务需要一个地方存储上次定时任务运行的时间（默认名为celerybeat-schedule，是一个本地shelve">
     
     
         
@@ -144,25 +144,25 @@
   <div class="content" itemprop="articleBody">
     <p>工作中踩了一些坑，抽空整理了一下。现阶段启动 <code>celery beat</code>一般有两种方式:</p>
 <h1 id="直接启动"><a href="#直接启动" class="headerlink" title="直接启动"></a>直接启动</h1><p>  在生产环境中推荐使用这种方式。可以在<code>supervisor</code>中新增一个配置文件来启动。并在<code>ansible</code>配置文件中添加重启项目。</p>
-  <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ celery -A proj beat</span><br></pre></td></tr></table></figure>
+  <figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">$ celery -A proj beat</span><br></pre></td></tr></table></figure>
 <p>  Beat 服务需要一个地方存储上次定时任务运行的时间（默认名为<code>celerybeat-schedule</code>，是一个本地<code>shelve</code>数据库文件），所以要确保 Beat 在该文件所在的目录有写权限。否则会因为权限报错。可以通过以下命令指定<code>celerybeat-schedule</code>目录：</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ celery -A proj beat -s /home/celery/var/run/celerybeat-schedule</span><br></pre></td></tr></table></figure>
+  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">$ celery -A proj beat -s /home/celery/var/run/celerybeat-schedule</span><br></pre></td></tr></table></figure>
 <h1 id="在启动-Worker-时增加参数"><a href="#在启动-Worker-时增加参数" class="headerlink" title="在启动 Worker 时增加参数"></a>在启动 Worker 时增加参数</h1><p>  虽然这种方式在只启动一个 <code>worker</code> 节点的时候很方便，但通常在生产环境中不推荐这种方式。因为生产环境常常启动多个 <code>worker</code> 节点，这种启动方式会导致每个<code>worker</code>节点都启动一个<code>beat</code>服务，可能会重复执行事先做好的定时任务。</p>
-  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ celery -A proj worker -B</span><br></pre></td></tr></table></figure>
+  <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">$ celery -A proj worker -B</span><br></pre></td></tr></table></figure>
 <h1 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h1><h2 id="使用-Django-插件"><a href="#使用-Django-插件" class="headerlink" title="使用 Django 插件"></a>使用 Django 插件</h2><p>  默认的调度程序用本地的<code>shelve</code>数据库文件来储存定时任务上次运行的时间，使用<code>django-celery-beat</code>可以将这些信息储存在 Django 数据库中。</p>
 <ul>
 <li><p>安装包</p>
-<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ pip install django-celery-beat</span><br></pre></td></tr></table></figure>
+<figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">$ pip install django-celery-beat</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 <ul>
 <li><p>在配置文件中将改包加入<code>INSTALLED_APPS</code>配置项中</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">INSTALLED_APPS = (</span><br><span class="line">  ...,</span><br><span class="line">  <span class="string">'django_celery_beat'</span>,</span><br><span class="line">)</span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">- 运行 Django 数据库迁移来创建表</span><br><span class="line"></span><br><span class="line">```cmd</span><br><span class="line">$ python manage.py migrate</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">INSTALLED_APPS = (</span><br><span class="line">  ...,</span><br><span class="line">  <span class="string">'django_celery_beat'</span>,</span><br><span class="line">)</span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line">- 运行 Django 数据库迁移来创建表</span><br><span class="line"></span><br><span class="line">```cmd</span><br><span class="line">$ python manage.py migrate</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 <ul>
 <li><p>调用 Beat 时使用参数</p>
-<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler</span><br></pre></td></tr></table></figure>
+<figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">$ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
 
