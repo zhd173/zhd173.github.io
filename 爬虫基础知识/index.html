@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="正则表达式（python中使用re包） ^ ： 以某个字符开头，例如^b，为字母b开头 . ：代表任意字符 * ： 前面的字符出现任意多次，例如“^b.*”代表以b开头，后面任意位任意字符的字符串 $ ： 代表以某个字符结尾。例如3$意味以3结尾 ？： 是一种非贪婪匹配的模式，默认为贪婪匹配（倒序查找），例如“.*?(b.*?b).*”，匹配“booooobbby”，输出为“booooob” ，如">
+<meta property="og:type" content="article">
+<meta property="og:title" content="爬虫基础知识">
+<meta property="og:url" content="https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/index.html">
+<meta property="og:site_name" content="海东的博客">
+<meta property="og:description" content="正则表达式（python中使用re包） ^ ： 以某个字符开头，例如^b，为字母b开头 . ：代表任意字符 * ： 前面的字符出现任意多次，例如“^b.*”代表以b开头，后面任意位任意字符的字符串 $ ： 代表以某个字符结尾。例如3$意味以3结尾 ？： 是一种非贪婪匹配的模式，默认为贪婪匹配（倒序查找），例如“.*?(b.*?b).*”，匹配“booooobbby”，输出为“booooob” ，如">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2017-10-28T01:52:27.000Z">
+<meta property="article:modified_time" content="2018-09-05T03:39:01.548Z">
+<meta property="article:author" content="zhd173">
+<meta property="article:tag" content="python">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=16">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=192" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=180">
+          
+        
+    
+    <!-- title -->
+    <title>爬虫基础知识</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 5.1.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/%E7%B1%BB%E6%96%B9%E6%B3%95%E5%92%8C%E9%9D%99%E6%80%81%E6%96%B9%E6%B3%95/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/%E6%B5%85%E8%B0%88%E5%8C%BA%E5%9D%97%E9%93%BE%E4%B8%8E%E6%95%B0%E5%AD%97%E8%B4%A7%E5%B8%81/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&text=爬虫基础知识"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&is_video=false&description=爬虫基础知识"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=爬虫基础知识&body=Check out this article: https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&name=爬虫基础知识&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%EF%BC%88python%E4%B8%AD%E4%BD%BF%E7%94%A8re%E5%8C%85%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">正则表达式（python中使用re包）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E4%BC%98%E5%85%88%E5%92%8C%E5%B9%BF%E5%BA%A6%E4%BC%98%E5%85%88%E9%81%8D%E5%8E%86%E7%AE%97%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">深度优先和广度优先遍历算法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#url%E5%B8%B8%E8%A7%81%E5%8E%BB%E9%87%8D%E7%AD%96%E7%95%A5"><span class="toc-number">3.</span> <span class="toc-text">url常见去重策略</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%BC%96%E7%A0%81"><span class="toc-number">4.</span> <span class="toc-text">字符串编码</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        爬虫基础知识
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">海东的博客</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2017-10-28T01:52:27.000Z" itemprop="datePublished">2017-10-28</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/tags/python/" rel="tag">python</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="正则表达式（python中使用re包）"><a href="#正则表达式（python中使用re包）" class="headerlink" title="正则表达式（python中使用re包）"></a>正则表达式（python中使用re包）</h1><ol>
+<li>^ ： 以某个字符开头，例如^b，为字母b开头</li>
+<li>. ：代表任意字符</li>
+<li>* ： 前面的字符出现任意多次，例如“^b.*”代表以b开头，后面任意位任意字符的字符串</li>
+<li>$ ： 代表以某个字符结尾。例如3$意味以3结尾</li>
+<li>？： 是一种非贪婪匹配的模式，默认为贪婪匹配（倒序查找），例如“.*?(b.*?b).*”，匹配“booooobbby”，输出为“booooob” ，如果第二个b不加？，则会贪婪匹配从右边开始，即匹配到最后一个b</li>
+<li>（）： 提取括号中的子字符串</li>
+<li>‘+’ ： 至少出现一次</li>
+<li>{} ： 限定出现的次数</li>
+<li>| ： 或</li>
+<li>[] ： 字符串匹配中括号中的任意一个字符都可以，[0-9]意味区间，[^1]意味不等于1</li>
+<li>\s \S ： s代表空格，S代表不为空格</li>
+<li>\w \W ： 代表字母下划线，W代表非字母下划线</li>
+<li>[\u4E00-\u9FA5] ： 代表汉字</li>
+<li>\b ： 代表数字</li>
+</ol>
+<h1 id="深度优先和广度优先遍历算法"><a href="#深度优先和广度优先遍历算法" class="headerlink" title="深度优先和广度优先遍历算法"></a>深度优先和广度优先遍历算法</h1><h1 id="url常见去重策略"><a href="#url常见去重策略" class="headerlink" title="url常见去重策略"></a>url常见去重策略</h1><ol>
+<li>将访问过的URL保存到数据库中</li>
+<li>将访问过的URL储存在set中，只需要0（1）的代价就可以查询url</li>
+<li>URL经过md5等hash运算后保存在set中</li>
+<li>用bitmap方法，把访问过的url通过hash函数映射到某一位</li>
+<li>bloomfilter方法对hash算法进行改进，多重hash函数降低冲突</li>
+</ol>
+<h1 id="字符串编码"><a href="#字符串编码" class="headerlink" title="字符串编码"></a>字符串编码</h1><ol>
+<li>计算机只能处理数字，文本必须转换为数字才能处理。计算机中以8个bit作为一个字节，所以一个字节能表示的最大的数字就是255</li>
+<li>计算机是美国人发明的，所以一个字节就能表示所有的字符，所以ASC||（一个字节）就成了美国人的标准编码</li>
+<li>ASCII码处理中文明显是不够的，所以中国制定了GB2312编码，用两个字节表示一个汉字。GB2312还把ASCII包含进去了，同理日本、韩国等国家都各有一套自己的编码，如此一来，出现多种语言混合的文本就会出现乱码。</li>
+<li>Unicode是将所有语言统一到一套编码里。乱码问题解决了，但是如果文本内容全部都是英文的话，传输和储存需要的空间就扩大了一倍。</li>
+<li>utf-8，可以变长的编码。英文压缩至一个字节，汉字三个字节，特别生僻的4个字节。但是utf-8在编程处理的时候会变的复杂（内存运算复杂）</li>
+<li>所以一般的做法是储存文件使用utf-8编码，内存运算时使用Unicode编码。Python2Windows默认为GB2312编码，Linux默认为UTF-8编码，在做decode运算的时候要先转换为Unicode，Python3默认为Unicode编码</li>
+</ol>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%EF%BC%88python%E4%B8%AD%E4%BD%BF%E7%94%A8re%E5%8C%85%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">正则表达式（python中使用re包）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E4%BC%98%E5%85%88%E5%92%8C%E5%B9%BF%E5%BA%A6%E4%BC%98%E5%85%88%E9%81%8D%E5%8E%86%E7%AE%97%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">深度优先和广度优先遍历算法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#url%E5%B8%B8%E8%A7%81%E5%8E%BB%E9%87%8D%E7%AD%96%E7%95%A5"><span class="toc-number">3.</span> <span class="toc-text">url常见去重策略</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%BC%96%E7%A0%81"><span class="toc-number">4.</span> <span class="toc-text">字符串编码</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&text=爬虫基础知识"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&is_video=false&description=爬虫基础知识"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=爬虫基础知识&body=Check out this article: https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&title=爬虫基础知识"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://haidong.dev/%E7%88%AC%E8%99%AB%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/&name=爬虫基础知识&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2020 zhd173
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-125225753-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'haidongdev';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+

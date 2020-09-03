@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Istio 的心脏 —— Pilot 源码分析（一）Pilot 的代码主要有两部分: pilot-discovery 和 pilot-agent ，其中 pilot-agent 负责数据面 Sidecar 实例的生命周期管理，而 pilot-discovery 则是主要负责流量控制方面的配置生成及下发。本文重点主要分析 pilot-discovery 的代码。 注：本文基于 istio relea">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Istio 的心脏 —— Pilot 源码分析（一）">
+<meta property="og:url" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
+<meta property="og:site_name" content="海东的博客">
+<meta property="og:description" content="Istio 的心脏 —— Pilot 源码分析（一）Pilot 的代码主要有两部分: pilot-discovery 和 pilot-agent ，其中 pilot-agent 负责数据面 Sidecar 实例的生命周期管理，而 pilot-discovery 则是主要负责流量控制方面的配置生成及下发。本文重点主要分析 pilot-discovery 的代码。 注：本文基于 istio relea">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i.loli.net/2020/09/03/P5eOiE2NwjMxLty.png">
+<meta property="og:image" content="https://i.loli.net/2020/09/03/q8satKEX6f53ec4.png">
+<meta property="og:image" content="https://i.loli.net/2020/09/03/2IbDaBl91TOgNt7.png">
+<meta property="article:published_time" content="2020-09-03T02:27:16.000Z">
+<meta property="article:modified_time" content="2020-09-03T03:18:13.563Z">
+<meta property="article:author" content="zhd173">
+<meta property="article:tag" content="cloudnative">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/09/03/P5eOiE2NwjMxLty.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=16">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=192" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=180">
+          
+        
+    
+    <!-- title -->
+    <title>Istio 的心脏 —— Pilot 源码分析（一）</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 5.1.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/%E5%9F%BA%E4%BA%8E%20Golang%20%E5%AE%9E%E7%8E%B0%E7%8E%AF%E5%BD%A2%E5%88%86%E5%B8%83%E5%BC%8F%E5%93%88%E5%B8%8C%EF%BC%88Chord%20DHT)/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&text=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&is_video=false&description=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Istio 的心脏 —— Pilot 源码分析（一）&body=Check out this article: https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&name=Istio 的心脏 —— Pilot 源码分析（一）&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Istio-%E7%9A%84%E5%BF%83%E8%84%8F-%E2%80%94%E2%80%94-Pilot-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Istio 的心脏 —— Pilot 源码分析（一）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E6%A2%B3%E7%90%86"><span class="toc-number">1.1.</span> <span class="toc-text">启动流程梳理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B"><span class="toc-number">1.1.1.</span> <span class="toc-text">初始化流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B"><span class="toc-number">1.1.2.</span> <span class="toc-text">启动过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.2.</span> <span class="toc-text">接口架构设计</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Istio 的心脏 —— Pilot 源码分析（一）
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">海东的博客</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2020-09-03T02:27:16.000Z" itemprop="datePublished">2020-09-03</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/tags/cloudnative/" rel="tag">cloudnative</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Istio-的心脏-——-Pilot-源码分析（一）"><a href="#Istio-的心脏-——-Pilot-源码分析（一）" class="headerlink" title="Istio 的心脏 —— Pilot 源码分析（一）"></a>Istio 的心脏 —— Pilot 源码分析（一）</h1><p>Pilot 的代码主要有两部分: <code>pilot-discovery</code> 和 <code>pilot-agent</code> ，其中 <code>pilot-agent</code> 负责数据面 Sidecar 实例的生命周期管理，而 <code>pilot-discovery</code> 则是主要负责流量控制方面的配置生成及下发。本文重点主要分析 <code>pilot-discovery</code> 的代码。</p>
+<p>注：本文基于 istio release-1.7 分支分析，其他版本可能代码结构有所不同。</p>
+<h2 id="启动流程梳理"><a href="#启动流程梳理" class="headerlink" title="启动流程梳理"></a>启动流程梳理</h2><p><code>pilot-discovery</code> 组件的入口代码在 <code>istio/pilot/cmd/pilot-discovery</code> 目录中。该目录中包含两个文件: <code>main.go</code> 中定义了 <code>pilot-discovery</code> 根命令及 <code>discovery</code> 命令，主要是启动服务发现及配置下发的主流程; 另一个文件 <code>request.go</code> 中定义了 <code>request</code> 命令，主要用来启服务发送 HTTP 请求测试 <code>pilot</code> 中的 <code>metrics/debug</code> 接口，多用来调试。</p>
+<p>我们主要关注 <code>main.go</code> 中 <code>discoveryCmd</code> 的 <code>RunE</code> 函数，代码如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 创建一个接收空结构的 stop channel 用来停止所有 servers</span></span><br><span class="line">stop := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建服务发现的 Server</span></span><br><span class="line">discoveryServer, err := bootstrap.NewServer(serverArgs)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;failed to create discovery service: %v&quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 运行 Server 中注册的所有服务</span></span><br><span class="line"><span class="keyword">if</span> err := discoveryServer.Start(stop); err != <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;failed to start discovery service: %v&quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等待 SIGINT 和 SIGTERM 信号并关闭 stop channel</span></span><br><span class="line">cmd.WaitSignal(stop)</span><br></pre></td></tr></table></figure>
+
+<h3 id="初始化流程"><a href="#初始化流程" class="headerlink" title="初始化流程"></a>初始化流程</h3><p>接下来分析 <code>discoveryServer</code> ，即 <code>pilot-discovery</code> 核心 Server 的初始化流程。在这之前需要先熟悉下 <code>Server</code> 的结构，位于 <code>istio/pilot/pkg/bootstrap/server.go</code> 文件中。</p>
+<p><code>Server</code> 中的关键字段如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Server <span class="keyword">struct</span> &#123;</span><br><span class="line">  XDSServer *xds.DiscoveryServer  <span class="comment">// Xds 服务器</span></span><br><span class="line">  environment *model.Environment  <span class="comment">// Pilot 环境所需的 API 集合</span></span><br><span class="line">  kubeRegistry *kubecontroller.Controller   <span class="comment">// 处理 K8s 主集群的注册中心</span></span><br><span class="line">  multicluster *kubecontroller.Multicluster <span class="comment">// 处理 K8s 多个集群的注册中心</span></span><br><span class="line">  configController  model.ConfigStoreCache  <span class="comment">// 处理配置（如 VirtualService 等) 的 Controller</span></span><br><span class="line">  ConfigStores      []model.ConfigStoreCache <span class="comment">// 不同配置信息的缓存器，提供 Get、List、Create 等方法</span></span><br><span class="line">  serviceEntryStore *serviceentry.ServiceEntryStore <span class="comment">// 单独存储 ServiceEntry 的储存器</span></span><br><span class="line">  fileWatcher filewatcher.FileWatcher <span class="comment">// 文件监听器，主要 watch meshconfig 和 networks 配置文件等</span></span><br><span class="line">  startFuncs []startFunc <span class="comment">// 保存了上述所有服务的启动函数，便于在 Start() 方法中批量启动及管理</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再来看初始化流程，即 <code>NewServer()</code> 方法中的内容，总的来看主要有以下关键步骤：</p>
+<p><img src="https://i.loli.net/2020/09/03/P5eOiE2NwjMxLty.png" alt="image.png"></p>
+<p>接下来对每个步骤分别进行分析。</p>
+<ol>
+<li><p>初始化 <code>Environment</code></p>
+<p>什么是 <code>Environment</code> 呢？根据定义 <code>Environment</code> 为 <code>Pilot</code> 提供了一个汇总的、运行中所需的 API 集合。 <code>Environment</code> 中字段（接口）如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Environment <span class="keyword">struct</span> &#123;</span><br><span class="line">  ServiceDiscovery  <span class="comment">// 服务发现的接口模型，主要列出 services 和 instances</span></span><br><span class="line">  IstioConfigStore  <span class="comment">// Istio 配置文件的存储器，主要列出 ServiceEntry 等配置</span></span><br><span class="line">  mesh.Watcher      <span class="comment">// mesh config 文件的监听器</span></span><br><span class="line">  mesh.NetworksWatcher <span class="comment">// mesh network config 文件的监听器</span></span><br><span class="line">  PushContext *PushContext <span class="comment">// 在推送（下发 xDS）生成期间保存信息的上下文</span></span><br><span class="line">  DomainSuffix <span class="keyword">string</span> <span class="comment">// istio server 默认的后缀域名</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中 <code>PushContext</code> 是 <code>Pilot</code> 在推送 xDS 前，生成配置期间保存相关信息的上下文，在全量推送配置和配置发生改变时重置。它会保存所有的错误和统计信息，并缓存一些配置的计算信息。 <code>ServiceDiscovery</code> 主要提供了枚举 Istio 中服务和实例的方法。 <code>mesh.Watcher</code> 和 <code>mesh.NetworksWatcher</code> 主要监听 <code>istiod</code> 启动时需要的两个配置文件，这两个配置文件是通过 <code>configmap</code> 映射到 <code>Pod</code> 的文件系统中的，监听器将在监听到配置文件变化时运行预先注册的 <code>Handler</code> 。文件挂载参考 <code>istiod</code> 的配置文件：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">istiod-56c488887d-z9k5c</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">istio-system</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">    <span class="attr">volumeMounts:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">mountPath:</span> <span class="string">/etc/istio/config</span></span><br><span class="line">      <span class="attr">name:</span> <span class="string">config-volume</span></span><br><span class="line">  <span class="attr">volumes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">configMap:</span></span><br><span class="line">      <span class="attr">defaultMode:</span> <span class="number">420</span></span><br><span class="line">      <span class="attr">name:</span> <span class="string">istio</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">config-volume</span></span><br></pre></td></tr></table></figure>
+
+<p>相应的配置存储在 <code>istio-system/istio</code> 这个 <code>configmap</code> 中，里面保存了 <code>mesh</code> 和 <code>meshNetworks</code> 两种配置，样例如下:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">istio</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">istio-system</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">mesh:</span> <span class="string">|-</span></span><br><span class="line">    <span class="attr">accessLogEncoding:</span> <span class="string">TEXT</span></span><br><span class="line">    <span class="attr">accessLogFile:</span> <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="attr">accessLogFormat:</span> <span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="attr">defaultConfig:</span></span><br><span class="line">      <span class="attr">binaryPath:</span> <span class="string">/usr/local/bin/mosn</span></span><br><span class="line">      <span class="attr">concurrency:</span> <span class="number">2</span></span><br><span class="line">      <span class="attr">configPath:</span> <span class="string">./etc/istio/proxy</span></span><br><span class="line">    <span class="string">...</span></span><br><span class="line">  <span class="attr">meshNetworks:</span> <span class="string">&#x27;networks: &#123;&#125;&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>再回头来看 <code>Environment</code> 的初始化：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">e := &amp;model.Environment&#123;</span><br><span class="line">  PushContext:  model.NewPushContext(),</span><br><span class="line">  DomainSuffix: args.RegistryOptions.KubeOptions.DomainSuffix,</span><br><span class="line">&#125;</span><br><span class="line">ac := aggregate.NewController(aggregate.Options&#123;</span><br><span class="line">  MeshHolder: e,</span><br><span class="line">&#125;)</span><br><span class="line">e.ServiceDiscovery = ac</span><br></pre></td></tr></table></figure>
+
+<p>首先是初始化了一份 <code>PushContext</code> ，创建 <code>PushContext</code> 所需的各种列表和 Map 。 其次是初始化了一个聚合所有注册中心的 <code>Controller</code> 作为 <code>Environment</code> 中的 <code>ServiceDiscovery</code> 。 该 <code>Controller</code> 提供从所有注册中心（如 K8s, Consul, mcp 等）获取服务和实例列表的方法。 这里传入了一个参数 <code>MeshHolder</code> 主要是利用 <code>Environment</code> 中的 <code>mesh.Watcher</code> 将 <code>mesh</code> 这个配置同步过去。</p>
+</li>
+<li><p>初始化 <code>Server</code></p>
+<p><code>Server</code> 的结构之前分析过，这里将之前初始化的 <code>Environment</code> 传入后，开始初始化 <code>XDSServer</code> 。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">s := &amp;Server&#123;</span><br><span class="line">  clusterID:       getClusterID(args),</span><br><span class="line">  environment:     e,</span><br><span class="line">  XDSServer:       xds.NewDiscoveryServer(e, args.Plugins), <span class="comment">// 初始化 XDSServer</span></span><br><span class="line">  fileWatcher:     filewatcher.NewWatcher(),</span><br><span class="line">  httpMux:         http.NewServeMux(),</span><br><span class="line">  monitoringMux:   http.NewServeMux(),</span><br><span class="line">  readinessProbes: <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]readinessProbe),</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>XDSServer</code> 相关的代码在 <code>istio/pilot/pkg/xds/discovery.go</code> 中，对应为 <code>DiscoveryServer</code> ，该服务为 <code>Pilot</code> 的 <code>Envoy</code> xDS APIs 的 gRPC 实现。 <code>DiscoveryServer</code> 关键定义如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> DiscoveryServer <span class="keyword">struct</span> &#123;</span><br><span class="line">  Env *model.Environment   <span class="comment">// 即上述 pilot server 中的 Environment</span></span><br><span class="line">  ConfigGenerator core.ConfigGenerator  <span class="comment">// 控制面 Istio 配置的生成器，如 VirtualService 等</span></span><br><span class="line">  Generators <span class="keyword">map</span>[<span class="keyword">string</span>]model.XdsResourceGenerator <span class="comment">// 针对不同配置类型的定制化生成器</span></span><br><span class="line">  concurrentPushLimit <span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line">  <span class="comment">// 不同服务所有实例的集合，增量更新，key 为 service 和 namespace</span></span><br><span class="line">  <span class="comment">// EndpointShards 中是以不同的注册中心名为 key 分组保存实例</span></span><br><span class="line">  EndpointShardsByService <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">map</span>[<span class="keyword">string</span>]*EndpointShards </span><br><span class="line">  pushChannel <span class="keyword">chan</span> *model.PushRequest  <span class="comment">// 接收 push 请求的 channel</span></span><br><span class="line">  pushQueue *PushQueue     <span class="comment">// 防抖之后，真正 Push xDS 之前所用的缓冲队列</span></span><br><span class="line">  adsClients      <span class="keyword">map</span>[<span class="keyword">string</span>]*Connection  <span class="comment">// ADS 和 EDS 的 gRPC 连接</span></span><br><span class="line">  StatusReporter DistributionStatusCache  <span class="comment">// 监听 xDS ACK 和连接断开</span></span><br><span class="line">  <span class="comment">// xDS 状态更新的生成器（更新 connect, disconnect, nacks, acks）</span></span><br><span class="line">  <span class="comment">// 状态更新后向所有 connection 推送 DiscoveryResponse</span></span><br><span class="line">  InternalGen *InternalGen </span><br><span class="line">  serverReady <span class="keyword">bool</span>     <span class="comment">// 表示缓存已同步，server 可以接受请求</span></span><br><span class="line">  debounceOptions debounceOptions  <span class="comment">// 防抖设置</span></span><br><span class="line">  cache Cache <span class="comment">// xDS 资源的缓存，目前仅适用于 EDS，线程安全</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>初始化 <code>MeshConfig</code> 、 <code>KubeClient</code> 、 <code>MeshNetworks</code> 和 <code>MeshHandlers</code></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">s.initMeshConfiguration(args, s.fileWatcher)</span><br><span class="line"><span class="keyword">if</span> err := s.initKubeClient(args); err != <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">&quot;error initializing kube client: %v&quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line">s.initMeshNetworks(args, s.fileWatcher)</span><br><span class="line">s.initMeshHandlers()</span><br></pre></td></tr></table></figure>
+
+<p>这里的几个初始化函数比较好理解， <code>initMeshConfiguration</code> 和 <code>initMeshNetworks</code> 都是通过 <code>fileWatcher</code> 对 <code>istiod</code> 从 <code>configmap</code> 中挂载的两个配置文件 <code>mesh</code> 和 <code>meshNetworks</code> 进行监听。当配置文件发生变化时重载配置并触发相应的 <code>handlers</code> 。</p>
+<p><code>filewatcher</code> 的代码主要在另一个管理通用工具包的项目里： <code>github.com/istio/pkg/filewatcher</code> ，感兴趣可以再详细研究下，底层主要使用到了 <a target="_blank" rel="noopener" href="https://github.com/fsnotify/fsnotify">fsnotify</a> 这个库来推送事件。</p>
+<p><code>initMeshHandlers</code> 为上述两个配置文件注册了两个 <code>handler</code> ，当配置文件发生变化时触发全量 xDS 下发。</p>
+</li>
+<li><p>初始化 <code>Controllers</code></p>
+<p>这部分比较核心，分别初始化了三种控制器：证书、配置中心和注册中心，证书及安全相关的内容本篇先暂不讨论。主要来看 <code>initConfigController</code> 和 <code>initServiceControllers</code> 。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Server)</span> <span class="title">initControllers</span><span class="params">(args *PilotArgs)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">  log.Info(<span class="string">&quot;initializing controllers&quot;</span>)</span><br><span class="line">  <span class="keyword">if</span> err := s.initCertController(args); err != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;error initializing certificate controller: %v&quot;</span>, err)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> err := s.initConfigController(args); err != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;error initializing config controller: %v&quot;</span>, err)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> err := s.initServiceControllers(args); err != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;error initializing service controllers: %v&quot;</span>, err)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>配置数据包含各种流量控制的配置数据，主要是 <code>Istio</code> 定义的 CRD（如 <code>VirtualService</code> 、 <code>DestinationRules</code> 等），一个控制面可以通过 MCP 同时接入多个 K8s 之外的配置数据源，也可通过文件目录（主要用来调试）挂载，默认是读取 K8s 中的配置数据：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Server)</span> <span class="title">initK8SConfigStore</span><span class="params">(args *PilotArgs)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">  configController, err := s.makeKubeConfigController(args)</span><br><span class="line">  ...</span><br><span class="line">  s.initStatusController(args, features.EnableStatus) <span class="comment">// 初始化上面提到的 StatusReporter</span></span><br><span class="line">  <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>详细看下 <code>makeKubeConfigController</code> ，这里初始化了一个 <code>Istio CRDs</code> 的 <code>Client</code> ，实现 <code>ConfigStoreCache</code> 这个接口中增删改查等方法。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Server)</span> <span class="title">makeKubeConfigController</span><span class="params">(args *PilotArgs)</span> <span class="params">(model.ConfigStoreCache, error)</span></span> &#123;</span><br><span class="line">  c, err := crdclient.New(s.kubeClient, buildLedger(args.RegistryOptions), args.Revision, args.RegistryOptions.KubeOptions)</span><br><span class="line">  <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> c, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Client</code> 定义如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Client <span class="keyword">struct</span> &#123;</span><br><span class="line">  schemas collection.Schemas  <span class="comment">// Istio CRDs shemas</span></span><br><span class="line">  domainSuffix <span class="keyword">string</span></span><br><span class="line">  configLedger ledger.Ledger</span><br><span class="line">  revision <span class="keyword">string</span></span><br><span class="line">  kinds <span class="keyword">map</span>[resource.GroupVersionKind]*cacheHandler <span class="comment">// 跟踪已知类型的所有缓存 handler</span></span><br><span class="line">  queue queue.Instance</span><br><span class="line">  istioClient istioclient.Interface</span><br><span class="line">  serviceApisClient serviceapisclient.Interface</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中 <code>schemas</code> 主要关注了以下类型，基本所有 Istio 定义的 CRD 都包含了。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// PilotServiceApi contains only collections used by Pilot, including experimental Service Api.</span></span><br><span class="line">PilotServiceApi = collection.NewSchemasBuilder().</span><br><span class="line">    MustAdd(IstioNetworkingV1Alpha3Destinationrules).</span><br><span class="line">    MustAdd(IstioNetworkingV1Alpha3Envoyfilters).</span><br><span class="line">    MustAdd(IstioNetworkingV1Alpha3Gateways).</span><br><span class="line">    MustAdd(IstioNetworkingV1Alpha3Serviceentries).</span><br><span class="line">    MustAdd(IstioNetworkingV1Alpha3Sidecars).</span><br><span class="line">    MustAdd(IstioNetworkingV1Alpha3Virtualservices).</span><br><span class="line">    MustAdd(IstioNetworkingV1Alpha3Workloadentries).</span><br><span class="line">    MustAdd(IstioNetworkingV1Alpha3Workloadgroups).</span><br><span class="line">    MustAdd(IstioSecurityV1Beta1Authorizationpolicies).</span><br><span class="line">    MustAdd(IstioSecurityV1Beta1Peerauthentications).</span><br><span class="line">    MustAdd(IstioSecurityV1Beta1Requestauthentications).</span><br><span class="line">    MustAdd(K8SServiceApisV1Alpha1Gatewayclasses).</span><br><span class="line">    MustAdd(K8SServiceApisV1Alpha1Gateways).</span><br><span class="line">    MustAdd(K8SServiceApisV1Alpha1Httproutes).</span><br><span class="line">    MustAdd(K8SServiceApisV1Alpha1Tcproutes).</span><br><span class="line">    Build()</span><br></pre></td></tr></table></figure>
+
+<p>再依次对这些类型初始化 <code>Informer</code> 开启监听。回到 <code>initConfigController</code> ，创建好 <code>ConfigStore</code> 之后，再对其进一步包装：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 将所有 ConfigStore 聚合并缓存</span></span><br><span class="line">aggregateConfigController, err := configaggregate.MakeCache(s.ConfigStores)</span><br><span class="line"><span class="comment">// 通过 s.configController 统一操作上面聚合的 ConfigStores</span></span><br><span class="line">s.configController = aggregateConfigController</span><br><span class="line"><span class="comment">// 将其包装为 IstioConfigStore 传入 environment，便于操作 ServiceEntry/Gateway 等资源</span></span><br><span class="line">s.environment.IstioConfigStore = model.MakeIstioStore(s.configController)</span><br></pre></td></tr></table></figure>
+
+<p>最后将该 <code>controller</code> 的启动函数注册到 <code>startFuncs</code> 中：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">s.addStartFunc(<span class="function"><span class="keyword">func</span><span class="params">(stop &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">  <span class="keyword">go</span> s.configController.Run(stop)</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>再来看 <code>initServiceControllers</code> 服务发现的部分:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Server)</span> <span class="title">initServiceControllers</span><span class="params">(args *PilotArgs)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">  serviceControllers := s.ServiceController()</span><br><span class="line">  <span class="keyword">for</span> _, r := <span class="keyword">range</span> args.RegistryOptions.Registries &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">switch</span> serviceRegistry &#123;</span><br><span class="line">    <span class="keyword">case</span> serviceregistry.Kubernetes:</span><br><span class="line">      <span class="keyword">if</span> err := s.initKubeRegistry(serviceControllers, args); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">      &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从之前初始化的 <code>environment.ServiceDiscovery</code> 中获取已注册的服务中心，如果是 K8s 则执行 <code>initKubeRegistry</code>:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// initKubeRegistry creates all the k8s service controllers under this pilot</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Server)</span> <span class="title">initKubeRegistry</span><span class="params">(serviceControllers *aggregate.Controller, args *PilotArgs)</span> <span class="params">(err error)</span></span> &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  log.Infof(<span class="string">&quot;Initializing Kubernetes service registry %q&quot;</span>, args.RegistryOptions.KubeOptions.ClusterID)</span><br><span class="line">  kubeRegistry := kubecontroller.NewController(s.kubeClient, args.RegistryOptions.KubeOptions)</span><br><span class="line">  s.kubeRegistry = kubeRegistry</span><br><span class="line">  serviceControllers.AddRegistry(kubeRegistry)</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>进一步初始化 K8s 注册中心 <code>NewController</code> ，先看一下这个 <code>Controller</code> 的结构：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Controller <span class="keyword">struct</span> &#123;</span><br><span class="line">  client kubernetes.Interface</span><br><span class="line">  queue queue.Instance</span><br><span class="line">  serviceInformer cache.SharedIndexInformer</span><br><span class="line">  serviceLister   listerv1.ServiceLister</span><br><span class="line">  endpoints kubeEndpointsController</span><br><span class="line">  nodeInformer cache.SharedIndexInformer</span><br><span class="line">  nodeLister   listerv1.NodeLister</span><br><span class="line">  pods *PodCache</span><br><span class="line">  metrics         model.Metrics</span><br><span class="line">  networksWatcher mesh.NetworksWatcher</span><br><span class="line">  xdsUpdater      model.XDSUpdater</span><br><span class="line">  domainSuffix    <span class="keyword">string</span></span><br><span class="line">  clusterID       <span class="keyword">string</span></span><br><span class="line">  serviceHandlers  []<span class="function"><span class="keyword">func</span><span class="params">(*model.Service, model.Event)</span></span></span><br><span class="line">  instanceHandlers []<span class="function"><span class="keyword">func</span><span class="params">(*model.ServiceInstance, model.Event)</span></span></span><br><span class="line">  workloadHandlers []<span class="function"><span class="keyword">func</span><span class="params">(*model.WorkloadInstance, model.Event)</span></span></span><br><span class="line">  sync.RWMutex</span><br><span class="line">  servicesMap <span class="keyword">map</span>[host.Name]*model.Service</span><br><span class="line">  nodeSelectorsForServices <span class="keyword">map</span>[host.Name]labels.Instance</span><br><span class="line">  nodeInfoMap <span class="keyword">map</span>[<span class="keyword">string</span>]kubernetesNode</span><br><span class="line">  externalNameSvcInstanceMap <span class="keyword">map</span>[host.Name][]*model.ServiceInstance</span><br><span class="line">  workloadInstancesByIP <span class="keyword">map</span>[<span class="keyword">string</span>]*model.WorkloadInstance</span><br><span class="line">  ranger cidranger.Ranger</span><br><span class="line">  networkForRegistry <span class="keyword">string</span></span><br><span class="line">  once sync.Once</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到 <code>Controller</code> 主要是对 <code>Services</code> 、 <code>Nodes</code> 、 <code>Pods</code> 等资源各自初始化了 <code>informer</code> 、 <code>lister</code> 以及对应的 Map，各类 <code>Handlers</code> 在 <code>Informer</code> 监听到增删改查时推送相应的事件到 <code>queue</code> ，再由 <code>onServiceEvent</code> 、 <code>onNodeEvent</code> 、 <code>c.pods.onEvent</code> 中更新对应的 Map 。</p>
+<p>回到 <code>initServiceControllers</code> ，初始化完 K8s 注册中心之后，需要关注 K8s 集群之外的服务，这些服务基本都是通过 <code>ServiceEntry</code> 注册到控制面的，所有 <code>ServiceEntry</code> 配置数据目前还都在之前初始化的 <code>configController</code> 配置中心控制器中，这里将 <code>ServiceEntry</code> 数据单独拎出来初始化一个 <code>ServicEntry</code> 注册中心，加入到 <code>serviceControllers</code> 中：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">s.serviceEntryStore = serviceentry.NewServiceDiscovery(</span><br><span class="line">  s.configController, s.environment.IstioConfigStore, s.XDSServer)</span><br><span class="line">serviceControllers.AddRegistry(s.serviceEntryStore)</span><br></pre></td></tr></table></figure>
+
+<p><code>serviceEntryStore</code> 相关的逻辑会在后续 xDS 下发流程的分析中再阐述。</p>
+<p>最后将 <code>serviceControllers</code> 中所有的服务注册中心的 <code>Controller</code> 的启动函数都注册到 <code>startFuncs</code> 中:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">s.addStartFunc(<span class="function"><span class="keyword">func</span><span class="params">(stop &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">  <span class="keyword">go</span> serviceControllers.Run(stop)</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Run starts all the controllers</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span> <span class="title">Run</span><span class="params">(stop &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> _, r := <span class="keyword">range</span> c.GetRegistries() &#123;</span><br><span class="line">    <span class="keyword">go</span> r.Run(stop)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  &lt;-stop</span><br><span class="line">  log.Info(<span class="string">&quot;Registry Aggregator terminated&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>初始化 <code>RegistryEventHandlers</code></p>
+<p><code>initRegistryEventHandlers</code> 设置了三个事件处理器 <code>serviceHandler</code> 、 <code>instanceHandler</code> 和 <code>configHandler</code> 分别响应服务、实例和配置数据的更新事件。</p>
+<p><code>serviceHandler</code> 如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">serviceHandler := <span class="function"><span class="keyword">func</span><span class="params">(svc *model.Service, _ model.Event)</span></span> &#123;</span><br><span class="line">  pushReq := &amp;model.PushRequest&#123;</span><br><span class="line">    Full: <span class="literal">true</span>,</span><br><span class="line">    ConfigsUpdated: <span class="keyword">map</span>[model.ConfigKey]<span class="keyword">struct</span>&#123;&#125;&#123;&#123;</span><br><span class="line">      Kind:      gvk.ServiceEntry,</span><br><span class="line">      Name:      <span class="keyword">string</span>(svc.Hostname),</span><br><span class="line">      Namespace: svc.Attributes.Namespace,</span><br><span class="line">    &#125;: &#123;&#125;&#125;,</span><br><span class="line">    Reason: []model.TriggerReason&#123;model.ServiceUpdate&#125;,</span><br><span class="line">  &#125;</span><br><span class="line">  s.XDSServer.ConfigUpdate(pushReq)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> err := s.ServiceController().AppendServiceHandler(serviceHandler); err != <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;append service handler failed: %v&quot;</span>, err)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到当服务本身发生变化时，会触发 xDS 的全量下发，所有与该服务相关的代理都会收到推送。</p>
+<p>实例的变动也会触发 xDS 的全量下发，不过仅在连接 Consul 时生效。Kubernetes 和 MCP 这两种服务发现的场景下，更新事件的 Handler 是在别的地方注册的。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">instanceHandler := <span class="function"><span class="keyword">func</span><span class="params">(si *model.ServiceInstance, _ model.Event)</span></span> &#123;</span><br><span class="line">  <span class="comment">// <span class="doctag">TODO:</span> This is an incomplete code. This code path is called for consul, etc.</span></span><br><span class="line">  <span class="comment">// In all cases, this is simply an instance update and not a config update. So, we need to update</span></span><br><span class="line">  <span class="comment">// EDS in all proxies, and do a full config push for the instance that just changed (add/update only).</span></span><br><span class="line">  s.EnvoyXdsServer.ConfigUpdate(&amp;model.PushRequest&#123;</span><br><span class="line">    Full: <span class="literal">true</span>,</span><br><span class="line">    ConfigsUpdated: <span class="keyword">map</span>[model.ConfigKey]<span class="keyword">struct</span>&#123;&#125;&#123;&#123;</span><br><span class="line">      Kind:      gvk.ServiceEntry,</span><br><span class="line">      Name:      <span class="keyword">string</span>(si.Service.Hostname),</span><br><span class="line">      Namespace: si.Service.Attributes.Namespace,</span><br><span class="line">    &#125;: &#123;&#125;&#125;,</span><br><span class="line">    Reason: []model.TriggerReason&#123;model.ServiceUpdate&#125;,</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 跳过 Kubernetes 和 MCP</span></span><br><span class="line"><span class="keyword">for</span> _, registry := <span class="keyword">range</span> s.ServiceController().GetRegistries() &#123;</span><br><span class="line">  <span class="comment">// Skip kubernetes and external registries as they are handled separately</span></span><br><span class="line">  <span class="keyword">if</span> registry.Provider() == serviceregistry.Kubernetes ||</span><br><span class="line">    registry.Provider() == serviceregistry.External &#123;</span><br><span class="line">    <span class="keyword">continue</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> err := registry.AppendInstanceHandler(instanceHandler); err != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;append instance handler to registry %s failed: %v&quot;</span>, registry.Provider(), err)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上一步初始化了 <code>configController</code> ，它操作的对象主要是像 <code>VirtualService</code> 、 <code>DestinationRules</code> 这些 Istio 定义的配置，这些配置的变化也会触发 xDS 的全量下发，所有与该配置相关的代理都会收到推送。不过 <code>ServiceEntry</code> 和 <code>WorkloadEntry</code> 除外，这两个资源的配置下发是由 <code>ServiceEntryStore</code> 管理的，之前在初始化 <code>ServiceController</code> 时定义的 <code>s.serviceEntryStore</code> 会处理。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">configHandler := <span class="function"><span class="keyword">func</span><span class="params">(_, curr model.Config, event model.Event)</span></span> &#123;</span><br><span class="line">  pushReq := &amp;model.PushRequest&#123;</span><br><span class="line">    Full: <span class="literal">true</span>,</span><br><span class="line">    ConfigsUpdated: <span class="keyword">map</span>[model.ConfigKey]<span class="keyword">struct</span>&#123;&#125;&#123;&#123;</span><br><span class="line">      Kind:      curr.GroupVersionKind,</span><br><span class="line">      Name:      curr.Name,</span><br><span class="line">      Namespace: curr.Namespace,</span><br><span class="line">    &#125;: &#123;&#125;&#125;,</span><br><span class="line">    Reason: []model.TriggerReason&#123;model.ConfigUpdate&#125;,</span><br><span class="line">  &#125;</span><br><span class="line">  s.EnvoyXdsServer.ConfigUpdate(pushReq)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面是跳过 <code>ServiceEntry</code> 和 <code>WorkloadEntry</code> 的代码：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> _, schema := <span class="keyword">range</span> schemas &#123;</span><br><span class="line">  <span class="comment">// This resource type was handled in external/servicediscovery.go, no need to rehandle here.</span></span><br><span class="line">  <span class="keyword">if</span> schema.Resource().GroupVersionKind() == collections.IstioNetworkingV1Alpha3Serviceentries.</span><br><span class="line">    Resource().GroupVersionKind() &#123;</span><br><span class="line">    <span class="keyword">continue</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> schema.Resource().GroupVersionKind() == collections.IstioNetworkingV1Alpha3Workloadentries.</span><br><span class="line">    Resource().GroupVersionKind() &#123;</span><br><span class="line">    <span class="keyword">continue</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  s.configController.RegisterEventHandler(schema.Resource().GroupVersionKind(), configHandler)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>初始化 <code>DiscoveryService</code></p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Server)</span> <span class="title">initDiscoveryService</span><span class="params">(args *PilotArgs)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">  log.Infof(<span class="string">&quot;starting discovery service&quot;</span>)</span><br><span class="line">  <span class="comment">// Implement EnvoyXdsServer grace shutdown</span></span><br><span class="line">  s.addStartFunc(<span class="function"><span class="keyword">func</span><span class="params">(stop &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    s.EnvoyXdsServer.Start(stop)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">  &#125;)</span><br><span class="line"></span><br><span class="line">  s.initGrpcServer(args.KeepaliveOptions)</span><br><span class="line">  grpcListener, err := net.Listen(<span class="string">&quot;tcp&quot;</span>, args.ServerOptions.GRPCAddr)</span><br><span class="line">  <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> err</span><br><span class="line">  &#125;</span><br><span class="line">  s.GRPCListener = grpcListener</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里将 <code>EnvoyXdsServer</code> 的启动添加至 <code>startFuncs</code> 中，便于后续统一启动。并初始化 gRPC 服务器，监听对应的端口。</p>
+<p>初始化 gRPC 服务器，并注册 xDS2 和 xDS3 的 ADS 服务到 gRPC 服务器上:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Server)</span> <span class="title">initGrpcServer</span><span class="params">(options *istiokeepalive.Options)</span></span> &#123;</span><br><span class="line">  grpcOptions := s.grpcServerOptions(options)</span><br><span class="line">  s.grpcServer = grpc.NewServer(grpcOptions...)</span><br><span class="line">  s.EnvoyXdsServer.Register(s.grpcServer)</span><br><span class="line">  reflection.Register(s.grpcServer)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *DiscoveryServer)</span> <span class="title">Register</span><span class="params">(rpcs *grpc.Server)</span></span> &#123;</span><br><span class="line">  <span class="comment">// Register v2 and v3 servers</span></span><br><span class="line">  discovery.RegisterAggregatedDiscoveryServiceServer(rpcs, s)</span><br><span class="line">  discoveryv2.RegisterAggregatedDiscoveryServiceServer(rpcs, s.createV2Adapter())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到 ADS 的 gRPC 服务包含两个流式方法，一个是全量推送，一个是增量推送。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> _AggregatedDiscoveryService_serviceDesc = grpc.ServiceDesc&#123;</span><br><span class="line">  ServiceName: <span class="string">&quot;envoy.service.discovery.v3.AggregatedDiscoveryService&quot;</span>,</span><br><span class="line">  HandlerType: (*AggregatedDiscoveryServiceServer)(<span class="literal">nil</span>),</span><br><span class="line">  Methods:     []grpc.MethodDesc&#123;&#125;,</span><br><span class="line">  Streams: []grpc.StreamDesc&#123;</span><br><span class="line">    &#123;</span><br><span class="line">      StreamName:    <span class="string">&quot;StreamAggregatedResources&quot;</span>,</span><br><span class="line">      Handler:       _AggregatedDiscoveryService_StreamAggregatedResources_Handler,</span><br><span class="line">      ServerStreams: <span class="literal">true</span>,</span><br><span class="line">      ClientStreams: <span class="literal">true</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">      StreamName:    <span class="string">&quot;DeltaAggregatedResources&quot;</span>,</span><br><span class="line">      Handler:       _AggregatedDiscoveryService_DeltaAggregatedResources_Handler,</span><br><span class="line">      ServerStreams: <span class="literal">true</span>,</span><br><span class="line">      ClientStreams: <span class="literal">true</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;,</span><br><span class="line">  Metadata: <span class="string">&quot;envoy/service/discovery/v3/ads.proto&quot;</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>注册 <code>kubeClient.RunAndWait</code></p>
+<p>将 <code>kubeClient.RunAndWait</code> 方法注册至 <code>startFuncs</code> 中， <code>RunAndWait</code> 启动后所有 <code>informer</code> 将开始缓存，并等待它们同步完成。之所以在最后运行，可以保证所有的 <code>informer</code> 都已经注册。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> s.kubeClient != <span class="literal">nil</span> &#123;</span><br><span class="line">  s.addStartFunc(<span class="function"><span class="keyword">func</span><span class="params">(stop &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    s.kubeClient.RunAndWait(stop)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h3 id="启动过程"><a href="#启动过程" class="headerlink" title="启动过程"></a>启动过程</h3><p>启动流程比较简单，核心是依次启动初始化过程中注册到 <code>startFuncs</code> 中的启动函数：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> _, fn := <span class="keyword">range</span> s.startFuncs &#123;</span><br><span class="line">  <span class="keyword">if</span> err := fn(stop); err != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> err</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后调用 <code>waitForCache</code> 等待需要监听资源的 <code>informer</code> 缓存完毕，完成后开启 HTTP 服务响应 readiness 事件。</p>
+<p>一个总的时序图如下：</p>
+<p><img src="https://i.loli.net/2020/09/03/q8satKEX6f53ec4.png" alt="image.png"></p>
+<p>至此 <code>pilot-discovery</code> 的启动流程就结束了，有了大概了解后，可以归纳出整个 <code>pilot</code> 的接口设计架构。</p>
+<h2 id="接口架构设计"><a href="#接口架构设计" class="headerlink" title="接口架构设计"></a>接口架构设计</h2><p>在接口设计方面，<code>Pilot</code>  主要有两类接口：一种是 <code>Store</code> 类接口，定义对资源的增删改查等方法；另一种是 <code>Controller</code> 类接口，定义了 <code>RegisterEventHandler</code> 和 <code>Run</code> 方法。</p>
+<p><code>Store</code> 类接口主要指 <code>ConfigStore</code> 接口，以及它衍生出的 <code>IstioConfigStore</code>，后者主要操作的对象为 <code>Istio</code> 定义的配置类型，如 <code>VirtualService</code>、<code>ServiceEntry</code> 等。</p>
+<p>而 <code>Controller</code> 类接口指基于 <code>ConfigStore</code>  定义的 <code>ConfigStoreCache</code> 接口，这个接口在哪里用到了呢？之前讨论初始化流程的时候，有分析过 Pilot 的主 <code>Server </code> 的结构，其中用到该接口的有如下几个组件：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Server <span class="keyword">struct</span> &#123;</span><br><span class="line">  configController  model.ConfigStoreCache</span><br><span class="line">trueConfigStores      []model.ConfigStoreCache</span><br><span class="line">trueserviceEntryStore *serviceentry.ServiceEntryStore</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> ServiceEntryStore <span class="keyword">struct</span> &#123;</span><br><span class="line">  store model.IstioConfigStore</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到 <code>ConfigStores</code> 是存储所有配置类数据的 <code>Controller</code> 的地方，<code>ConfigStores</code> 都是在哪里添加的呢？在之前分析 <code>initConfigController</code> 方法中有提到，主要在以下地方添加：</p>
+<p><img src="https://i.loli.net/2020/09/03/2IbDaBl91TOgNt7.png" alt="image.png"></p>
+<p>都添加完毕后，会把这些 <code>ConfigStoreCache</code> 都聚合到 <code>Server.configController</code> 中统一处理。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Wrap the config controller with a cache.</span></span><br><span class="line">aggregateConfigController, err := configaggregate.MakeCache(s.ConfigStores)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">true<span class="keyword">return</span> err</span><br><span class="line">&#125;</span><br><span class="line">s.configController = aggregateConfigController</span><br></pre></td></tr></table></figure>
+
+<p>而 <code>ServiceEntryStore</code> 中用到的 <code>IstioConfigStore</code> 也是在这里得到的：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">s.environment.IstioConfigStore = model.MakeIstioStore(s.configController)</span><br></pre></td></tr></table></figure>
+
+<p>以上，当服务启动后，会逐个调用这些 <code>ConfigStoreCache</code> 中的 <code>Run</code> 方法处理资源的增删改事件。</p>
+<p>Pilot 源码分析的第一部分就到这里，后续会针对重要的组件和接口做更细致的分析，如 <code>EnvoyXdsServer</code> 、<code>ServiceEntryStore</code> 等，以及梳理 xDS 协议的生成和下发流程。</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Istio-%E7%9A%84%E5%BF%83%E8%84%8F-%E2%80%94%E2%80%94-Pilot-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Istio 的心脏 —— Pilot 源码分析（一）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E6%A2%B3%E7%90%86"><span class="toc-number">1.1.</span> <span class="toc-text">启动流程梳理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B"><span class="toc-number">1.1.1.</span> <span class="toc-text">初始化流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B"><span class="toc-number">1.1.2.</span> <span class="toc-text">启动过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.2.</span> <span class="toc-text">接口架构设计</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&text=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&is_video=false&description=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Istio 的心脏 —— Pilot 源码分析（一）&body=Check out this article: https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&title=Istio 的心脏 —— Pilot 源码分析（一）"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/&name=Istio 的心脏 —— Pilot 源码分析（一）&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2020 zhd173
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+<!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-125225753-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'haidongdev';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+
