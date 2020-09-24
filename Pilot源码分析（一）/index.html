@@ -6,25 +6,25 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="Istio 作为目前 ServicMesh 方案中的翘楚，吸引着越来越多的企业及开发者。越来越多的团队想将其应用于微服务的治理，但在实际落地时却因为不了解 Istio 黑盒中的运行机制而左右为难，本文将基于 1.7 的源码讲解 Istio 的核心组件 Pilot 的结构及运行流程，希望对读者应用 Istio 有所助益。 注：本文基于 istio release-1.7 分支分析，其他版本的代码结构">
+    <meta name="description" content="Istio Pilot 源码分析（一）Istio 作为目前 ServiceMesh 方案中的翘楚，吸引着越来越多的企业及开发者。越来越多的团队想将其应用于微服务的治理，但在实际落地时却因为不了解 Istio 黑盒中的运行机制而左右为难，本文将基于 1.7 的源码讲解 Istio 的核心组件 Pilot 的结构及运行流程，希望对读者应用 Istio 有所助益。 注：本文基于 istio releas">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Istio Pilot 源码分析（一）">
 <meta property="og:url" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
 <meta property="og:site_name" content="海东的博客">
-<meta property="og:description" content="Istio 作为目前 ServicMesh 方案中的翘楚，吸引着越来越多的企业及开发者。越来越多的团队想将其应用于微服务的治理，但在实际落地时却因为不了解 Istio 黑盒中的运行机制而左右为难，本文将基于 1.7 的源码讲解 Istio 的核心组件 Pilot 的结构及运行流程，希望对读者应用 Istio 有所助益。 注：本文基于 istio release-1.7 分支分析，其他版本的代码结构">
+<meta property="og:description" content="Istio Pilot 源码分析（一）Istio 作为目前 ServiceMesh 方案中的翘楚，吸引着越来越多的企业及开发者。越来越多的团队想将其应用于微服务的治理，但在实际落地时却因为不了解 Istio 黑盒中的运行机制而左右为难，本文将基于 1.7 的源码讲解 Istio 的核心组件 Pilot 的结构及运行流程，希望对读者应用 Istio 有所助益。 注：本文基于 istio releas">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://i.loli.net/2020/09/08/QiNduK6Wx5U2O3I.png">
-<meta property="og:image" content="https://i.loli.net/2020/09/08/UjlTfL9xqS7dAKI.png">
-<meta property="og:image" content="https://i.loli.net/2020/09/08/M67sROKeUBfodrJ.png">
-<meta property="og:image" content="https://i.loli.net/2020/09/08/a3h1lnWwy65u8eX.png">
+<meta property="og:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-struct.png">
+<meta property="og:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-serviceentrystore.png">
+<meta property="og:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-sequence-all.png">
+<meta property="og:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-sequence-init.png">
 <meta property="og:image" content="https://i.loli.net/2020/09/03/P5eOiE2NwjMxLty.png">
 <meta property="og:image" content="https://i.loli.net/2020/09/03/2IbDaBl91TOgNt7.png">
 <meta property="article:published_time" content="2020-09-03T02:27:16.000Z">
-<meta property="article:modified_time" content="2020-09-08T12:18:55.686Z">
+<meta property="article:modified_time" content="2020-09-24T07:36:38.294Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="cloudnative">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://i.loli.net/2020/09/08/QiNduK6Wx5U2O3I.png">
+<meta name="twitter:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-struct.png">
     
     
         
@@ -84,6 +84,8 @@
     <span id="actions">
       <ul>
         
+        <li><a class="icon" href="/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
         
         <li><a class="icon" href="/%E5%9F%BA%E4%BA%8E%20Golang%20%E5%AE%9E%E7%8E%B0%E7%8E%AF%E5%BD%A2%E5%88%86%E5%B8%83%E5%BC%8F%E5%93%88%E5%B8%8C%EF%BC%88Chord%20DHT)/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
@@ -113,7 +115,7 @@
 
     </div>
     <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8F%E8%A7%82%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">宏观架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E6%A2%B3%E7%90%86"><span class="toc-number">3.</span> <span class="toc-text">启动流程梳理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B"><span class="toc-number">3.1.</span> <span class="toc-text">初始化流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B"><span class="toc-number">3.2.</span> <span class="toc-text">启动过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.</span> <span class="toc-text">接口设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">6.</span> <span class="toc-text">参考</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Istio-Pilot-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Istio Pilot 源码分析（一）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8F%E8%A7%82%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.</span> <span class="toc-text">宏观架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E6%A2%B3%E7%90%86"><span class="toc-number">1.3.</span> <span class="toc-text">启动流程梳理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.1.</span> <span class="toc-text">初始化流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B"><span class="toc-number">1.3.2.</span> <span class="toc-text">启动过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.4.</span> <span class="toc-text">接口设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">1.6.</span> <span class="toc-text">参考</span></a></li></ol></li></ol>
     </div>
   </span>
 </div>
@@ -139,7 +141,7 @@
       
         <time datetime="2020-09-03T02:27:16.000Z" itemprop="datePublished">2020-09-03</time>
         
-        (Updated: <time datetime="2020-09-08T12:18:55.686Z" itemprop="dateModified">2020-09-08</time>)
+        (Updated: <time datetime="2020-09-24T07:36:38.294Z" itemprop="dateModified">2020-09-24</time>)
         
       
     </div>
@@ -159,7 +161,7 @@
   
 
   <div class="content" itemprop="articleBody">
-    <p><code>Istio</code> 作为目前 <code>ServicMesh</code> 方案中的翘楚，吸引着越来越多的企业及开发者。越来越多的团队想将其应用于微服务的治理，但在实际落地时却因为不了解 <code>Istio</code> 黑盒中的运行机制而左右为难，本文将基于 1.7 的源码讲解 <code>Istio</code> 的核心组件 <code>Pilot</code> 的结构及运行流程，希望对读者应用 <code>Istio</code> 有所助益。</p>
+    <h1 id="Istio-Pilot-源码分析（一）"><a href="#Istio-Pilot-源码分析（一）" class="headerlink" title="Istio Pilot 源码分析（一）"></a>Istio Pilot 源码分析（一）</h1><p><code>Istio</code> 作为目前 <code>ServiceMesh</code> 方案中的翘楚，吸引着越来越多的企业及开发者。越来越多的团队想将其应用于微服务的治理，但在实际落地时却因为不了解 <code>Istio</code> 黑盒中的运行机制而左右为难，本文将基于 1.7 的源码讲解 <code>Istio</code> 的核心组件 <code>Pilot</code> 的结构及运行流程，希望对读者应用 <code>Istio</code> 有所助益。</p>
 <p><em>注：本文基于 <code>istio release-1.7</code> 分支分析，其他版本的代码结构会有所不同。</em></p>
 <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>随着 <code>Istio</code> 1.7 的发布，内部组件精简后的 <code>istiod</code> 日趋稳定，越来越多的公司将其应用到自身微服务的流量治理、安全通信及监测中。多点也不例外，应用 <code>Istio</code> 来落地业务系统所有 <code>Dubbo</code> 服务的网格化，下沉 <code>SDK</code> 逻辑，解决基础中间件与业务系统过于耦合等痛点。 目前，我们是通过自己开发的 <code>Controller</code> 组件对接 <code>Zookeeper</code> 等注册中心，将注册到 <code>Zookeeper</code> 的节点实时转化为 <code>ServiceEntry</code> 及 <code>WorkloadEntry</code> 等 <code>Istio</code> 配置类型写入 <code>kube-apiserver</code>，再由 <code>Pilot</code> 转化为 <code>xDS</code> 协议下发至数据面，同时对集群、虚拟机中的服务进行治理。随着公司服务网格化的逐步落地，对 <code>Istio</code> 及数据面组件源码级掌握的诉求越来越高，没有足够的深度及广度很难解决开发过程中遇到的难题，让我们一起揭开 <code>Istio</code> 神秘的面纱，看看黑箱内部是如何运作的。</p>
 <p>本文作为 <code>Istio</code> 控制面组件 <code>Pilot</code> 的源码分析系列，主要面向刚接触 <code>Istio</code> 或仅停留在使用 <code>Istio</code> 基本配置类型（如 <code>VirtualService</code>、<code>DestinationRule</code> 等）的同学，需要熟悉 <code>Istio</code> 的一些 <a target="_blank" rel="noopener" href="https://istio.io/latest/zh/docs/concepts/traffic-management/">基础概念及名词</a> 。文章会涉及较多的代码细节，我们会以不同的篇幅分别介绍以下内容：</p>
@@ -177,26 +179,26 @@
 <li><code>pilot-agent</code></li>
 </ul>
 <p>其中 <code>pilot-agent</code> 负责数据面 <code>Sidecar</code> 实例的生命周期管理，而 <code>pilot-discovery</code> 负责控制面流量管理配置及路由规则的生成和下发。</p>
-<h2 id="宏观架构"><a href="#宏观架构" class="headerlink" title="宏观架构"></a>宏观架构</h2><p><code>pilot-discovery</code> 的核心组件如图：<br><img src="https://i.loli.net/2020/09/08/QiNduK6Wx5U2O3I.png" alt="pilot-discovery-struct.png"></p>
+<h2 id="宏观架构"><a href="#宏观架构" class="headerlink" title="宏观架构"></a>宏观架构</h2><p><code>pilot-discovery</code> 的核心组件如图：<br><img src="./images/pilot-discovery-struct.png" alt="pilot-discovery-struct"></p>
 <p>其中 <code>Server</code> 为 <code>pilot-discovery</code> 的主服务，包含了三个比较重要的组件：</p>
 <ul>
 <li><code>Config Controller</code>：从不同来源接收流量控制和路由规则等 <code>Istio</code> 的配置，并响应各类事件。</li>
 <li><code>Service Controller</code>：从不同注册中心同步服务及实例，并响应各类事件。</li>
 <li><code>EnvoyXdsServer</code>：核心的 <code>xDS</code> 协议推送服务，根据上面组件的数据生成 <code>xDS</code> 协议并下发。</li>
 </ul>
-<p><code>Config Controller</code> 比较核心的就是对接 <code>Kubernetes</code>，从 <code>kube-apiserver</code> 中 <code>Watch</code> 集群中的 <code>VirtualService</code>、<code>ServiceEntry</code>、<code>DestinationRules</code> 等配置信息，有变化则生成 <code>PushRequest</code> 推送至 <code>EnvoyXdsServer</code> 中的推送队列。除此之外，还支持对接 <code>MCP(Mesh Configuration Protocol)</code> 协议的 <code>gRPC Server</code>，如 <code>Nacos</code> 的 <code>MCP</code> 服务等，不过这种方式需要 <code>Galley</code> 组件中的 <code>MCP Server</code> 支持，<code>Galley</code> 在 <code>Istio</code> 后续的版本会慢慢弱化直至删除。最后一种是基于内存的 <code>Config Controller</code> 实现，通过 <code>Watch</code> 一个文件目录，加载目录中的 <code>yaml</code> 文件生成配置数据，主要用来测试。</p>
+<p><code>Config Controller</code> 比较核心的就是对接 <code>Kubernetes</code>，从 <code>kube-apiserver</code> 中 <code>Watch</code> 集群中的 <code>VirtualService</code>、<code>ServiceEntry</code>、<code>DestinationRules</code> 等配置信息，有变化则生成 <code>PushRequest</code> 推送至 <code>EnvoyXdsServer</code> 中的推送队列。除此之外，还支持对接 <code>MCP(Mesh Configuration Protocol)</code> 协议的 <code>gRPC Server</code>，如 <code>Nacos</code> 的 <code>MCP</code> 服务等，只需要在 <code>meshconfig</code> 中配置 <code>configSources</code> 即可。最后一种是基于内存的 <code>Config Controller</code> 实现，通过 <code>Watch</code> 一个文件目录，加载目录中的 <code>yaml</code> 文件生成配置数据，主要用来测试。</p>
 <p><code>Service Controller</code> 目前原生支持 <code>Kubernetes</code> 和 <code>Consul</code>，注册在这些注册中心中的服务可以无痛接入 <code>Mesh</code>，另外一种比较特殊，就是 <code>ServiceEntryStore</code>，它本质是储存在 <code>Config Controller</code> 中的 <code>Istio</code> 配置数据，但它描述的却是集群外部的服务信息，详情可阅读文档 <a target="_blank" rel="noopener" href="https://istio.io/latest/docs/reference/config/networking/service-entry/">ServiceEntry</a>，<code>Istio</code> 通过它将集群外部，如部署在虚拟机中的服务、非 <code>Kubernetes</code> 的原生服务同步到 <code>Istio</code> 中，纳入网格统一进行流量控制和路由，所以 <code>ServiceEntryStore</code> 也可以视为一种注册中心。还有一种就是 <code>Mock Service Registry</code>，主要用来测试。</p>
 <p><code>ServiceEntryStore</code> 从 <code>Config Controller</code> 到 <code>Service Controller</code> 的转化流程大致如图（后续会做详细的代码分析，这里简单了解一下即可）：</p>
-<p><img src="https://i.loli.net/2020/09/08/UjlTfL9xqS7dAKI.png" alt="pilot-discovery-serviceentry.png"></p>
+<p><img src="./images/pilot-discovery-serviceentrystore.png" alt="pilot-discovery-serviceentrystore"></p>
 <p><code>ConfigStores</code> 是一个列表，里面存储了各类 <code>Istio</code> 配置文件，包括 <code>ServiceEntry</code> 、<code>WorkloadEntry</code> 等服务数据，也包括 <code>VirtualService</code>、<code>DestinationRules</code>、<code>Sidecar</code> 等流量控制、路由规则的配置数据，<code>pilot-discovery</code> 将这些 <code>ConfigStores</code> 聚合成一个 <code>configController</code> 统一进行管理，之后再从其中衍生出 <code>IstioConfigStore</code>，将其作为 <code>serviceEntryStore</code> 的配置源。<code>serviceEntryStore</code> 其实就是 <code>ServiceEntry Controller</code>，响应 <code>ServiceEntry</code> 和 <code>WorkloadEntry</code> 这类服务信息的变化。</p>
 <p><code>EnvoyXdsServer</code> 比较核心，一切与 <code>xDS</code> 协议相关的接收、转换、下发操作都由它完成。<code>EnvoyXdsServer</code> 对接所有集群中的边车代理，如 <code>Envoy</code>、<code>MOSN</code> 等，当配置或服务发生变化时主动推送，也会响应代理发送的请求，依据请求的信息下发相应的 <code>xDS</code> 配置。</p>
 <p>理解了这三个核心组件的定义，就能比较好的理解下面分析的各类流程了。</p>
-<p><code>pilot-discovery</code> 的整个业务流程梳理如下，可以先大概浏览一遍，之后我们逐一进行分析:<br><img src="https://i.loli.net/2020/09/08/M67sROKeUBfodrJ.png" alt="pilot-discovery-sequence-all.png"></p>
+<p><code>pilot-discovery</code> 的整个业务流程梳理如下，可以先大概浏览一遍，之后我们逐一进行分析:<br><img src="./images/pilot-discovery-sequence-all.png" alt="pilot-discovery-sequence-all"></p>
 <h2 id="启动流程梳理"><a href="#启动流程梳理" class="headerlink" title="启动流程梳理"></a>启动流程梳理</h2><p>首先详细看一下 <code>pilot-discovery</code> 的启动流程。<code>pilot-discovery</code> 组件的入口代码在 <code>istio/pilot/cmd/pilot-discovery</code> 中。该目录中包含两个文件: <code>main.go</code> 和 <code>request.go</code>。<code>main.go</code> 中定义了 <code>pilot-discovery</code> 根命令及 <code>discovery</code> 命令，是启动服务发现及配置下发的主流程; 另一个文件 <code>request.go</code> 中定义了 <code>request</code> 命令，用来请求 <code>Pilot</code> 中的 <code>metrics/debug</code> 接口，多用来调试。</p>
 <p><code>main.go</code> 中 <code>discoveryCmd</code>的 <code>RunE</code> 函数定义了启动过程，代码如下：</p>
 <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 创建一个接收空结构的 stop channel 用来停止所有 servers</span></span><br><span class="line">stop := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建服务发现的 Server</span></span><br><span class="line">discoveryServer, err := bootstrap.NewServer(serverArgs)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;failed to create discovery service: %v&quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 运行 Server 中注册的所有服务</span></span><br><span class="line"><span class="keyword">if</span> err := discoveryServer.Start(stop); err != <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;failed to start discovery service: %v&quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等待 SIGINT 和 SIGTERM 信号并关闭 stop channel</span></span><br><span class="line">cmd.WaitSignal(stop)</span><br></pre></td></tr></table></figure>
 
-<p>启动流程如图所示：<br><img src="https://i.loli.net/2020/09/08/a3h1lnWwy65u8eX.png" alt="pilot-discovery-sequence-init.png"></p>
+<p>启动流程如图所示：<br><img src="./images/pilot-discovery-sequence-init.png" alt="pilot-discovery-init"></p>
 <h3 id="初始化流程"><a href="#初始化流程" class="headerlink" title="初始化流程"></a>初始化流程</h3><p>接下来介绍 <code>discoveryServer</code> ，即 <code>pilot-discovery</code> 组件的核心。在这之前先看下 <code>Server</code> 的结构，代码位于 <code>istio/pilot/pkg/bootstrap/server.go</code> 文件中。</p>
 <p><code>Server</code> 的关键字段如下：</p>
 <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Server <span class="keyword">struct</span> &#123;</span><br><span class="line">  XDSServer *xds.DiscoveryServer  <span class="comment">// Xds 服务</span></span><br><span class="line">  environment *model.Environment  <span class="comment">// Pilot 环境所需的 API 集合</span></span><br><span class="line">  kubeRegistry *kubecontroller.Controller   <span class="comment">// 处理 Kubernetes 主集群的注册中心</span></span><br><span class="line">  multicluster *kubecontroller.Multicluster <span class="comment">// 处理 Kubernetes 多个集群的注册中心</span></span><br><span class="line">  configController  model.ConfigStoreCache  <span class="comment">// 统一处理配置数据（如 VirtualService 等) 的 Controller</span></span><br><span class="line">  ConfigStores      []model.ConfigStoreCache <span class="comment">// 不同配置信息的缓存器，提供 Get、List、Create 等方法</span></span><br><span class="line">  serviceEntryStore *serviceentry.ServiceEntryStore <span class="comment">// 单独处理 ServiceEntry 的 Controller</span></span><br><span class="line">  fileWatcher filewatcher.FileWatcher <span class="comment">// 文件监听器，主要 watch meshconfig 和 networks 配置文件等</span></span><br><span class="line">  startFuncs []startFunc <span class="comment">// 保存了上述所有服务的启动函数，便于在 Start() 方法中批量启动及管理</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -360,7 +362,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8F%E8%A7%82%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">宏观架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E6%A2%B3%E7%90%86"><span class="toc-number">3.</span> <span class="toc-text">启动流程梳理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B"><span class="toc-number">3.1.</span> <span class="toc-text">初始化流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B"><span class="toc-number">3.2.</span> <span class="toc-text">启动过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.</span> <span class="toc-text">接口设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">6.</span> <span class="toc-text">参考</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Istio-Pilot-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Istio Pilot 源码分析（一）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8F%E8%A7%82%E6%9E%B6%E6%9E%84"><span class="toc-number">1.2.</span> <span class="toc-text">宏观架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E6%A2%B3%E7%90%86"><span class="toc-number">1.3.</span> <span class="toc-text">启动流程梳理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.1.</span> <span class="toc-text">初始化流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E8%BF%87%E7%A8%8B"><span class="toc-number">1.3.2.</span> <span class="toc-text">启动过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.4.</span> <span class="toc-text">接口设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">1.6.</span> <span class="toc-text">参考</span></a></li></ol></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">

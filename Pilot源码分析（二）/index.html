@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="Istio Pilot 源码分析（二）了解了 Pilot 源码的基本结构和启动流程之后，我们可以深入探索 Pilot 究竟是怎么下发 xDS 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 Kubernetes 原生的服务（如存在于虚拟机的服务、 Dubbo 服务等）到底是怎么注册并且经过一系列转化下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Istio Pilot 源码分析（二）">
+<meta property="og:url" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
+<meta property="og:site_name" content="海东的博客">
+<meta property="og:description" content="Istio Pilot 源码分析（二）了解了 Pilot 源码的基本结构和启动流程之后，我们可以深入探索 Pilot 究竟是怎么下发 xDS 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 Kubernetes 原生的服务（如存在于虚拟机的服务、 Dubbo 服务等）到底是怎么注册并且经过一系列转化下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://haidong.dev/images/serviceentrystore-init.png">
+<meta property="og:image" content="https://haidong.dev/images/workloadentry-update-sequence.png">
+<meta property="og:image" content="https://haidong.dev/images/serviceentryhandler-sequence.png">
+<meta property="article:published_time" content="2020-09-15T02:27:16.000Z">
+<meta property="article:modified_time" content="2020-09-24T07:47:17.797Z">
+<meta property="article:author" content="zhd173">
+<meta property="article:tag" content="cloudnative">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://haidong.dev/images/serviceentrystore-init.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=16">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=192" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=180">
+          
+        
+    
+    <!-- title -->
+    <title>Istio Pilot 源码分析（二）</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 5.1.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&text=Istio Pilot 源码分析（二）"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&is_video=false&description=Istio Pilot 源码分析（二）"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Istio Pilot 源码分析（二）&body=Check out this article: https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&name=Istio Pilot 源码分析（二）&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&t=Istio Pilot 源码分析（二）"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Istio-Pilot-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Istio Pilot 源码分析（二）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#ServiceEntryStore"><span class="toc-number">1.1.</span> <span class="toc-text">ServiceEntryStore</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#workloadEntryHandler"><span class="toc-number">1.1.1.</span> <span class="toc-text">workloadEntryHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#serviceEntryHandler"><span class="toc-number">1.1.2.</span> <span class="toc-text">serviceEntryHandler</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Istio Pilot 源码分析（二）
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">海东的博客</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2020-09-15T02:27:16.000Z" itemprop="datePublished">2020-09-15</time>
+        
+        (Updated: <time datetime="2020-09-24T07:47:17.797Z" itemprop="dateModified">2020-09-24</time>)
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/tags/cloudnative/" rel="tag">cloudnative</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="Istio-Pilot-源码分析（二）"><a href="#Istio-Pilot-源码分析（二）" class="headerlink" title="Istio Pilot 源码分析（二）"></a>Istio Pilot 源码分析（二）</h1><p>了解了 <code>Pilot</code> 源码的基本结构和启动流程之后，我们可以深入探索 <code>Pilot</code> 究竟是怎么下发 <code>xDS</code> 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 <code>Kubernetes</code> 原生的服务（如存在于虚拟机的服务、 <code>Dubbo</code> 服务等）到底是怎么注册并且经过一系列转化下发至数据面的？</p>
+<p>带着这些问题，开始我们今天对 <code>Pilot</code> 的探索。</p>
+<p><em>注：本文基于 <code>istio release-1.7</code> 分支分析，其他版本的代码结构会有所不同。</em></p>
+<h2 id="ServiceEntryStore"><a href="#ServiceEntryStore" class="headerlink" title="ServiceEntryStore"></a>ServiceEntryStore</h2><p>在多点落地 <code>ServiceMesh</code> 的过程中，大量的用到了 <code>ServiceEntry</code> ，每一个 <code>Dubbo</code> 服务都会映射一个 <code>ServiceEntry</code> 创建在 <code>Kubernetes</code> 里。 <code>ServiceEntry</code> 的作用就是将集群外部的服务注册到 <code>Pilot</code> 中，再统一由 <code>ServiceController</code> 进行管理。相应的，管理外部服务实例的对象为 <code>WorkloadEntry</code> ， <code>ServiceEntry</code> 可以通过 <code>LabelSelector</code> 筛选出自身对应的实例。</p>
+<p><code>ServiceEntry</code> 是作为 CR (Custome Resource) 保存在 <code>Kubernetes</code> 集群里的（也可以通过 MCP 服务直接发送给 <code>Pilot</code> ），暂时只讨论在集群中创建 CR 的情况。在上一篇源码分析中我们介绍到， <code>Pilot</code> 是通过 <code>ConfigController</code> 来监听创建在集群中的 CR 的， <code>ServiceEntry</code> 也不例外，保存这些 CR 的 <code>ConfigStore</code> 会被转化为 <code>ServiceEntryStore</code> 中的 <code>store</code> （转化的详情见上一篇源码分析），这就是最终 <code>Pilot</code> 存储 <code>ServiceEntry</code> 的地方。当监听的资源推送更改的事件时，会触发 <code>ServiceEntryStore</code> 对应的 <code>handler</code> 处理后续的流程。</p>
+<p>我们先来看一下 <code>ServiceEntryStore</code> 的结构和它提供的方法：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// istio/pilot/pkg/serviceregistry/serviceentry/servicediscovery.go:61</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ServiceEntryStore communicates with ServiceEntry CRDs and monitors for changes</span></span><br><span class="line"><span class="keyword">type</span> ServiceEntryStore <span class="keyword">struct</span> &#123;</span><br><span class="line">  XdsUpdater model.XDSUpdater  <span class="comment">// 用来接收 EnvouXdsServer 的接口，主要用来 Push 相应的 xDS 更新请求</span></span><br><span class="line">  store      model.IstioConfigStore <span class="comment">// 保存 ServiceEntry 实例的地方</span></span><br><span class="line">  storeMutex sync.RWMutex  <span class="comment">// 读写 store 时需要的锁</span></span><br><span class="line">  <span class="comment">// 以 hostname/namespace 以及类型（是服务还是实例）等作为索引的服务实例表</span></span><br><span class="line">  instances <span class="keyword">map</span>[instancesKey]<span class="keyword">map</span>[configKey][]*model.ServiceInstance</span><br><span class="line">  <span class="comment">// seWithSelectorByNamespace 保存了每个 namespace 里所有的 ServiceEntry，也是作为一个索引供 handler 使用</span></span><br><span class="line">  seWithSelectorByNamespace <span class="keyword">map</span>[<span class="keyword">string</span>][]servicesWithEntry</span><br><span class="line">  refreshIndexes            <span class="keyword">bool</span></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到除了 <code>XdsUpdater</code> 和 <code>store</code> 两个必须的结构外，其余大部分都是些资源的缓存和索引（索引键不同），为后续 <code>handler</code> 处理事件时提供便利。除了结构，还需要关注两个比较重要的 <code>handler</code> :</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// WorkloadEntry 变化时的处理逻辑</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *ServiceEntryStore)</span> <span class="title">workloadEntryHandler</span><span class="params">(old, curr model.Config, event model.Event)</span></span> &#123;&#125;</span><br><span class="line"><span class="comment">// ServiceEntry 变化时的处理逻辑</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *ServiceEntryStore)</span> <span class="title">serviceEntryHandler</span><span class="params">(old, curr model.Config, event model.Event)</span></span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这两个 <code>handler</code> 的业务逻辑后文中再详细讨论，先来回忆下 <code>ServiceEntryStore</code> 的初始化流程：</p>
+<p><img src="/images/serviceentrystore-init.png" alt="img"></p>
+<p>在 <code>Server</code> 初始化 <code>ServiceController</code> 的时候，通过调用 <code>NewServiceDiscovery()</code> 方法初始化 <code>ServiceEntryStore</code> ，这里除了将 <code>EnvoyXdsServer</code> 和 <code>IstioConfigStore</code> 与 <code>ServiceEntryStore</code> 关联起来外，最重要的就是向 <code>ConfigController</code> 注册了 <code>ServiceEntry</code> 和 <code>WorkloadEntry</code> 的事件 <code>Handler</code>:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewServiceDiscovery</span><span class="params">(configController model.ConfigStoreCache, store model.IstioConfigStore, xdsUpdater model.XDSUpdater)</span> *<span class="title">ServiceEntryStore</span></span> &#123;</span><br><span class="line">  s := &amp;ServiceEntryStore&#123;</span><br><span class="line">    XdsUpdater:            xdsUpdater,</span><br><span class="line">    store:                 store,</span><br><span class="line">    ip2instance:           <span class="keyword">map</span>[<span class="keyword">string</span>][]*model.ServiceInstance&#123;&#125;,</span><br><span class="line">    instances:             <span class="keyword">map</span>[instancesKey]<span class="keyword">map</span>[configKey][]*model.ServiceInstance&#123;&#125;,</span><br><span class="line">    workloadInstancesByIP: <span class="keyword">map</span>[<span class="keyword">string</span>]*model.WorkloadInstance&#123;&#125;,</span><br><span class="line">    refreshIndexes:        <span class="literal">true</span>,</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> configController != <span class="literal">nil</span> &#123;</span><br><span class="line">    configController.RegisterEventHandler(gvk.ServiceEntry, s.serviceEntryHandler)</span><br><span class="line">    configController.RegisterEventHandler(gvk.WorkloadEntry, s.workloadEntryHandler)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> s</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这样在 <code>ConfigController</code> 监听到资源变化的时候，就会调用 <code>serviceEntryHandler</code> 和 <code>workloadEntryHandler</code> 来处理事件了。这两个 <code>handler</code> 的目的都是向 <code>EnvoyXdsServer</code> 推送相应的 <code>xDS</code> 资源变化。</p>
+<h3 id="workloadEntryHandler"><a href="#workloadEntryHandler" class="headerlink" title="workloadEntryHandler"></a>workloadEntryHandler</h3><p>首先来分析服务实例 <code>WorkloadEntry</code> 的更新是如何下发 <code>xDS</code> 的：</p>
+<p><img src="/images/workloadentry-update-sequence.png" alt="img"></p>
+<p><code>seWithSelectorByNamespace</code> 和 <code>instances</code> 如上述 <code>ServiceEntryStore</code> 结构介绍中的注释，前者缓存了各个 <code>namespace</code> 中所有的 <code>ServiceEntry</code> ，后者则是所有服务节点 <code>WorkloadEntry</code> 的缓存。</p>
+<p>当有新的 <code>WorkloadEntry</code> 变化时，先从 <code>seWithSelectorByNamespace</code> 中读取同一 <code>namespace</code> 中的 <code>ServiceEntry</code> ，遍历它们并与 <code>WorkloadEntry</code> 的 <code>Label</code> 进行比对，确定是关联的服务后，依据获取的服务创建 <code>ServiceInstance</code> 。 <code>ServiceInstance</code> 是 <code>Pilot</code> 抽象出的描述具体服务对应实例的结构:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> ServiceInstance <span class="keyword">struct</span> &#123;</span><br><span class="line">  Service     *Service       <span class="string">`json:&quot;service,omitempty&quot;`</span></span><br><span class="line">  ServicePort *Port          <span class="string">`json:&quot;servicePort,omitempty&quot;`</span></span><br><span class="line">  Endpoint    *IstioEndpoint <span class="string">`json:&quot;endpoint,omitempty&quot;`</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>创建了新的 <code>ServiceInstance</code> 后，需要及时更新实例的索引表 <code>s.instances</code> :</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> event != model.EventDelete &#123;</span><br><span class="line">  s.updateExistingInstances(key, instances)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  s.deleteExistingInstances(key, instances)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>之后将新创建的 <code>ServiceInstance</code> 传入 <code>ServiceEntryStore</code> 专门处理 <code>EDS</code> 的函数 <code>s.edsUpdate()</code> 。在做进一步处理时，需要再刷新一遍索引表，调用 <code>maybeRefreshIndexes()</code> 避免其他协程的工作导致索引表更新不及时，完成后开启读锁，从服务实例索引表 <code>s.Instances</code> 中查找我们要处理的实例。如果是删除事件，先前更新索引表的时候已经删除了，所以这里是查不到 <code>allInstances</code> 的，直接向 <code>EnvouXdsServer</code> 发送删除 <code>EDS</code> 的请求。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// edsUpdate triggers an EDS update for the given instances</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *ServiceEntryStore)</span> <span class="title">edsUpdate</span><span class="params">(instances []*model.ServiceInstance)</span></span> &#123;</span><br><span class="line">  allInstances := []*model.ServiceInstance&#123;&#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Find all keys we need to lookup</span></span><br><span class="line">  keys := <span class="keyword">map</span>[instancesKey]<span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">  <span class="keyword">for</span> _, i := <span class="keyword">range</span> instances &#123;</span><br><span class="line">    keys[makeInstanceKey(i)] = <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  s.maybeRefreshIndexes()</span><br><span class="line"></span><br><span class="line">  s.storeMutex.RLock()</span><br><span class="line">  <span class="keyword">for</span> key := <span class="keyword">range</span> keys &#123;</span><br><span class="line">    <span class="keyword">for</span> _, i := <span class="keyword">range</span> s.instances[key] &#123;</span><br><span class="line">      allInstances = <span class="built_in">append</span>(allInstances, i...)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  s.storeMutex.RUnlock()</span><br><span class="line"></span><br><span class="line">  <span class="comment">// This was a delete</span></span><br><span class="line">  <span class="keyword">if</span> <span class="built_in">len</span>(allInstances) == <span class="number">0</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> k := <span class="keyword">range</span> keys &#123;</span><br><span class="line">      _ = s.XdsUpdater.EDSUpdate(s.Cluster(), <span class="keyword">string</span>(k.hostname), k.namespace, <span class="literal">nil</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  &#125;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果实例有更新则直接发送更新 <code>EDS</code> 的请求：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// edsUpdate triggers an EDS update for the given instances</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *ServiceEntryStore)</span> <span class="title">edsUpdate</span><span class="params">(instances []*model.ServiceInstance)</span></span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  endpoints := <span class="built_in">make</span>(<span class="keyword">map</span>[instancesKey][]*model.IstioEndpoint)</span><br><span class="line">  <span class="keyword">for</span> _, instance := <span class="keyword">range</span> allInstances &#123;</span><br><span class="line">    port := instance.ServicePort</span><br><span class="line">    key := makeInstanceKey(instance)</span><br><span class="line">    endpoints[key] = <span class="built_in">append</span>(endpoints[key],</span><br><span class="line">    &amp;model.IstioEndpoint&#123;</span><br><span class="line">      Address:         instance.Endpoint.Address,</span><br><span class="line">      EndpointPort:    instance.Endpoint.EndpointPort,</span><br><span class="line">      ServicePortName: port.Name,</span><br><span class="line">      Labels:          instance.Endpoint.Labels,</span><br><span class="line">      UID:             instance.Endpoint.UID,</span><br><span class="line">      ServiceAccount:  instance.Endpoint.ServiceAccount,</span><br><span class="line">      Network:         instance.Endpoint.Network,</span><br><span class="line">      Locality:        instance.Endpoint.Locality,</span><br><span class="line">      LbWeight:        instance.Endpoint.LbWeight,</span><br><span class="line">      TLSMode:         instance.Endpoint.TLSMode,</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> k, eps := <span class="keyword">range</span> endpoints &#123;</span><br><span class="line">    _ = s.XdsUpdater.EDSUpdate(s.Cluster(), <span class="keyword">string</span>(k.hostname), k.namespace, eps)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>完整的 <code>workloadEntryHandler()</code> 代码如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *ServiceEntryStore)</span> <span class="title">workloadEntryHandler</span><span class="params">(old, curr model.Config, event model.Event)</span></span> &#123;</span><br><span class="line">  wle := curr.Spec.(*networking.WorkloadEntry)</span><br><span class="line">  key := configKey&#123;</span><br><span class="line">    kind:      workloadEntryConfigType,</span><br><span class="line">    name:      curr.Name,</span><br><span class="line">    namespace: curr.Namespace,</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  s.storeMutex.RLock()</span><br><span class="line">  <span class="comment">// We will only select entries in the same namespace</span></span><br><span class="line">  entries := s.seWithSelectorByNamespace[curr.Namespace]</span><br><span class="line">  s.storeMutex.RUnlock()</span><br><span class="line"></span><br><span class="line">  <span class="comment">// if there are no service entries, return now to avoid taking unnecessary locks</span></span><br><span class="line">  <span class="keyword">if</span> <span class="built_in">len</span>(entries) == <span class="number">0</span> &#123;</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  log.Debugf(<span class="string">&quot;Handle event %s for workload entry %s in namespace %s&quot;</span>, event, curr.Name, curr.Namespace)</span><br><span class="line">  instances := []*model.ServiceInstance&#123;&#125;</span><br><span class="line">  <span class="keyword">for</span> _, se := <span class="keyword">range</span> entries &#123;</span><br><span class="line">    workloadLabels := labels.Collection&#123;wle.Labels&#125;</span><br><span class="line">    <span class="keyword">if</span> !workloadLabels.IsSupersetOf(se.entry.WorkloadSelector.Labels) &#123;</span><br><span class="line">      <span class="comment">// Not a match, skip this one</span></span><br><span class="line">      <span class="keyword">continue</span></span><br><span class="line">    &#125;</span><br><span class="line">    instance := convertWorkloadEntryToServiceInstances(wle, se.services, se.entry)</span><br><span class="line">    instances = <span class="built_in">append</span>(instances, instance...)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> event != model.EventDelete &#123;</span><br><span class="line">    s.updateExistingInstances(key, instances)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    s.deleteExistingInstances(key, instances)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  s.edsUpdate(instances)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来就是 <code>EnvoyXdsServer</code> 来处理这次 <code>EDS</code> 的更新请求了。首先 <code>EnvoyXdsServer</code> 会判断此次 <code>EDS</code> 更新是全量下发还是增量下发，然后创建 <code>PushRequest</code> 发送至 <code>EnvoyXdsServer</code> 统一用来接收推送请求的 <code>pushChannel</code> 。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *DiscoveryServer)</span> <span class="title">EDSUpdate</span><span class="params">(clusterID, serviceName <span class="keyword">string</span>, namespace <span class="keyword">string</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">  istioEndpoints []*model.IstioEndpoint)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">  inboundEDSUpdates.Increment()</span><br><span class="line">  <span class="comment">// 判断是否是全量下发</span></span><br><span class="line">  fp := s.edsUpdate(clusterID, serviceName, namespace, istioEndpoints)</span><br><span class="line">  s.ConfigUpdate(&amp;model.PushRequest&#123;</span><br><span class="line">    Full: fp,</span><br><span class="line">    ConfigsUpdated: <span class="keyword">map</span>[model.ConfigKey]<span class="keyword">struct</span>&#123;&#125;&#123;&#123;</span><br><span class="line">      Kind:      gvk.ServiceEntry,</span><br><span class="line">      Name:      serviceName,</span><br><span class="line">      Namespace: namespace,</span><br><span class="line">    &#125;: &#123;&#125;&#125;,</span><br><span class="line">    Reason: []model.TriggerReason&#123;model.EndpointUpdate&#125;,</span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>pushChannel</code> 后续的处理流程和 <code>EDS</code> 是否增量更新将在下文讨论 <code>EnvoyXdsServer</code> 的时候再分析，这里不再赘述。</p>
+<h3 id="serviceEntryHandler"><a href="#serviceEntryHandler" class="headerlink" title="serviceEntryHandler"></a>serviceEntryHandler</h3><p>了解了 <code>WorkloadEntry</code> 的更新是如何处理之后，我们再来看下 <code>serviceEntryHandler</code> 是如何处理 <code>ServiceEntry</code> 的：</p>
+<p><img src="/images/serviceentryhandler-sequence.png" alt="img"></p>
+<p><code>serviceEntryHandler</code> 会将 <code>ServiceEntry</code> 转化为一组 <code>Pilot</code> 内部抽象的服务，每个不同的 <code>Hosts</code> 、 <code>Address</code> 都会对应一个 <code>Service</code> ，并且初始化一个名为 <code>configsUpdated</code> 的 <code>map</code> 来保存是否有 <code>ServiceEntry</code> 需要更新，以及创建了多个 <code>slice</code> 分别保存该新增、删除、更新和没有变化的服务：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *ServiceEntryStore)</span> <span class="title">serviceEntryHandler</span><span class="params">(old, curr model.Config, event model.Event)</span></span> &#123;</span><br><span class="line">  cs := convertServices(curr)</span><br><span class="line">  configsUpdated := <span class="keyword">map</span>[model.ConfigKey]<span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">  <span class="keyword">var</span> addedSvcs, deletedSvcs, updatedSvcs, unchangedSvcs []*model.Service</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据不同的事件类型，更新不同的 <code>slice</code> :</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">switch</span> event &#123;</span><br><span class="line"><span class="keyword">case</span> model.EventUpdate:</span><br><span class="line">  os := convertServices(old)</span><br><span class="line">  <span class="keyword">if</span> selectorChanged(old, curr) &#123;</span><br><span class="line">    <span class="comment">// Consider all services are updated.</span></span><br><span class="line">    mark := <span class="built_in">make</span>(<span class="keyword">map</span>[host.Name]*model.Service, <span class="built_in">len</span>(cs))</span><br><span class="line">    <span class="keyword">for</span> _, svc := <span class="keyword">range</span> cs &#123;</span><br><span class="line">      mark[svc.Hostname] = svc</span><br><span class="line">      updatedSvcs = <span class="built_in">append</span>(updatedSvcs, svc)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> _, svc := <span class="keyword">range</span> os &#123;</span><br><span class="line">      <span class="keyword">if</span> _, f := mark[svc.Hostname]; !f &#123;</span><br><span class="line">        updatedSvcs = <span class="built_in">append</span>(updatedSvcs, svc)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    addedSvcs, deletedSvcs, updatedSvcs, unchangedSvcs = servicesDiff(os, cs)</span><br><span class="line">  &#125;</span><br><span class="line"><span class="keyword">case</span> model.EventDelete:</span><br><span class="line">  deletedSvcs = cs</span><br><span class="line"><span class="keyword">case</span> model.EventAdd:</span><br><span class="line">  addedSvcs = cs</span><br><span class="line"><span class="keyword">default</span>:</span><br><span class="line">  <span class="comment">// this should not happen</span></span><br><span class="line">  unchangedSvcs = cs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>比较特别的是，当事件为更新事件时，会和老的 <code>Service</code> 列表进行比对。先看是否有某个服务的 <code>Selector</code> 发生了变化，如果发生了变化，需要将新老服务列表里的所有服务都加入到更新列表中。如果 <code>Selector</code> 没有发生变化，通过 <code>serviceDiff()</code> 挨个比对新老服务列表中的服务，对应保存至新增、删除、更新和未变化的 <code>slice</code> 中。</p>
+<p>将服务归类后，把需要变化的服务都写入 <code>configsUpdated</code> 中：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> _, svcs := <span class="keyword">range</span> [][]*model.Service&#123;addedSvcs, deletedSvcs, updatedSvcs&#125; &#123;</span><br><span class="line">  <span class="keyword">for</span> _, svc := <span class="keyword">range</span> svcs &#123;</span><br><span class="line">    configsUpdated[model.ConfigKey&#123;</span><br><span class="line">      Kind:      gvk.ServiceEntry,</span><br><span class="line">      Name:      <span class="keyword">string</span>(svc.Hostname),</span><br><span class="line">      Namespace: svc.Attributes.Namespace&#125;] = <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于 <code>serviceDiff()</code> 只会比对 <code>Service</code> 结构，并不会对比 <code>Endpoints</code> 是否变化，所以当有 <code>unchangedSvcs</code> 时，可能需要对这些服务的 <code>xDS</code> 做增量更新（只更新 <code>EDS</code> ），也可能是全量更新。什么时候会全量更新呢？当服务的 <code>Resolution</code> 为 <code>DNS</code> 时（可以阅读文档了解 <a target="_blank" rel="noopener" href="https://istio.io/latest/docs/reference/config/networking/service-entry/#ServiceEntry-Resolution">Resolution</a> ）， <code>Endpoint</code> 的 <code>address</code> 都是全域名，需要更新 <code>CDS</code> 才行。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(unchangedSvcs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">  <span class="comment">// If this service entry had endpoints with IPs (i.e. resolution STATIC), then we do EDS update.</span></span><br><span class="line">  <span class="comment">// If the service entry had endpoints with FQDNs (i.e. resolution DNS), then we need to do</span></span><br><span class="line">  <span class="comment">// full push (as fqdn endpoints go via strict_dns clusters in cds).</span></span><br><span class="line">  currentServiceEntry := curr.Spec.(*networking.ServiceEntry)</span><br><span class="line">  oldServiceEntry := old.Spec.(*networking.ServiceEntry)</span><br><span class="line">  <span class="keyword">if</span> currentServiceEntry.Resolution == networking.ServiceEntry_DNS &#123;</span><br><span class="line">    <span class="keyword">if</span> !reflect.DeepEqual(currentServiceEntry.Endpoints, oldServiceEntry.Endpoints) &#123;</span><br><span class="line">      <span class="comment">// fqdn endpoints have changed. Need full push</span></span><br><span class="line">      <span class="keyword">for</span> _, svc := <span class="keyword">range</span> unchangedSvcs &#123;</span><br><span class="line">        configsUpdated[model.ConfigKey&#123;</span><br><span class="line">          Kind:      gvk.ServiceEntry,</span><br><span class="line">          Name:      <span class="keyword">string</span>(svc.Hostname),</span><br><span class="line">          Namespace: svc.Attributes.Namespace&#125;] = <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当 <code>unchangedSvcs</code> 的 <code>Resolution</code> 为 <code>STATIC</code> 时，只需要增量的更新 <code>EDS</code> 即可：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(unchangedSvcs) &gt; <span class="number">0</span> &amp;&amp; !fullPush &#123;</span><br><span class="line">  <span class="comment">// IP endpoints in a STATIC service entry has changed. We need EDS update</span></span><br><span class="line">  <span class="comment">// If will do full-push, leave the edsUpdate to that.</span></span><br><span class="line">  <span class="comment">// XXX We should do edsUpdate for all unchangedSvcs since we begin to calculate service</span></span><br><span class="line">  <span class="comment">// data according to this &quot;configsUpdated&quot; and thus remove the &quot;!willFullPush&quot; condition.</span></span><br><span class="line">  instances := convertInstances(curr, unchangedSvcs)</span><br><span class="line">  key := configKey&#123;</span><br><span class="line">    kind:      serviceEntryConfigType,</span><br><span class="line">    name:      curr.Name,</span><br><span class="line">    namespace: curr.Namespace,</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// If only instances have changed, just update the indexes for the changed instances.</span></span><br><span class="line">  s.updateExistingInstances(key, instances)</span><br><span class="line">  s.edsUpdate(instances)</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果 <code>configsUpdated</code> 中有值，则需要做 <code>fullPush</code> ，先更新这些服务的 <code>EDS</code> ，再向 <code>pushChannel</code> 发送 <code>fullPush</code> 的 <code>PushRequest</code> :</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> fullPush &#123;</span><br><span class="line">  <span class="comment">// When doing a full push, for added and updated services trigger an eds update</span></span><br><span class="line">  <span class="comment">// so that endpoint shards are updated.</span></span><br><span class="line">  <span class="keyword">var</span> instances []*model.ServiceInstance</span><br><span class="line">  <span class="keyword">if</span> <span class="built_in">len</span>(addedSvcs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">    instances = <span class="built_in">append</span>(instances, convertInstances(curr, addedSvcs)...)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> <span class="built_in">len</span>(updatedSvcs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">    instances = <span class="built_in">append</span>(instances, convertInstances(curr, updatedSvcs)...)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> <span class="built_in">len</span>(unchangedSvcs) &gt; <span class="number">0</span> &#123;</span><br><span class="line">    currentServiceEntry := curr.Spec.(*networking.ServiceEntry)</span><br><span class="line">    oldServiceEntry := old.Spec.(*networking.ServiceEntry)</span><br><span class="line">    <span class="comment">// Non DNS service entries are sent via EDS. So we should compare and update if such endpoints change.</span></span><br><span class="line">    <span class="keyword">if</span> currentServiceEntry.Resolution != networking.ServiceEntry_DNS &#123;</span><br><span class="line">      <span class="keyword">if</span> !reflect.DeepEqual(currentServiceEntry.Endpoints, oldServiceEntry.Endpoints) &#123;</span><br><span class="line">        instances = <span class="built_in">append</span>(instances, convertInstances(curr, unchangedSvcs)...)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  s.edsUpdate(instances)</span><br><span class="line"></span><br><span class="line">  <span class="comment">// If service entry is deleted, cleanup endpoint shards for services.</span></span><br><span class="line">  <span class="keyword">for</span> _, svc := <span class="keyword">range</span> deletedSvcs &#123;</span><br><span class="line">    s.XdsUpdater.SvcUpdate(s.Cluster(), <span class="keyword">string</span>(svc.Hostname), svc.Attributes.Namespace, model.EventDelete)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  pushReq := &amp;model.PushRequest&#123;</span><br><span class="line">    Full:           <span class="literal">true</span>,</span><br><span class="line">    ConfigsUpdated: configsUpdated,</span><br><span class="line">    Reason:         []model.TriggerReason&#123;model.ServiceUpdate&#125;,</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  s.XdsUpdater.ConfigUpdate(pushReq)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>至此， <code>ServiceEntryStore</code> 是如何处理 <code>ServiceEntry</code> 和 <code>WorkloadEntry</code> 的逻辑就介绍完了。其余像 <code>ServiceEntry</code> 选择集群内的 <code>Pods</code> 、 <code>Kubernetes</code> 原生 <code>Service</code> 选择 <code>WorkloadEntry</code> 的用法读者感兴趣可以自行研究相关源码。</p>
+<p>其余注册中心的处理逻辑如 <code>kube</code> 、 <code>mcp</code> 等可继续关注本系列的其他文章。读者也可以自行尝试走读分析：</p>
+<figure class="highlight awk"><table><tr><td class="code"><pre><span class="line"><span class="regexp">//</span> 相关源码目录</span><br><span class="line">kube: pilot<span class="regexp">/pkg/</span>serviceregistry/kube</span><br><span class="line">mcp: pilot<span class="regexp">/pkg/</span>serviceregistry/mcp</span><br></pre></td></tr></table></figure>
+
+<p>接下来我们介绍 <code>Pilot Server</code> 中的核心， <code>EnvoyXdsServer</code> 。</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Istio-Pilot-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Istio Pilot 源码分析（二）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#ServiceEntryStore"><span class="toc-number">1.1.</span> <span class="toc-text">ServiceEntryStore</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#workloadEntryHandler"><span class="toc-number">1.1.1.</span> <span class="toc-text">workloadEntryHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#serviceEntryHandler"><span class="toc-number">1.1.2.</span> <span class="toc-text">serviceEntryHandler</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&text=Istio Pilot 源码分析（二）"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&is_video=false&description=Istio Pilot 源码分析（二）"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Istio Pilot 源码分析（二）&body=Check out this article: https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&title=Istio Pilot 源码分析（二）"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&name=Istio Pilot 源码分析（二）&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/&t=Istio Pilot 源码分析（二）"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2020
+    zhd173
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-125225753-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'haidongdev';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+
+</body>
+</html>
