@@ -14,13 +14,13 @@
 <meta property="og:description" content="Istio Pilot 源码分析（一）Istio 作为目前 ServiceMesh 方案中的翘楚，吸引着越来越多的企业及开发者。越来越多的团队想将其应用于微服务的治理，但在实际落地时却因为不了解 Istio 黑盒中的运行机制而左右为难，本文将基于 1.7 的源码讲解 Istio 的核心组件 Pilot 的结构及运行流程，希望对读者应用 Istio 有所助益。 注：本文基于 istio releas">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://haidong.dev/images/pilot-discovery-struct.png">
-<meta property="og:image" content="https://haidong.dev/images/pilot-discovery-serviceentrystore.png">
+<meta property="og:image" content="https://haidong.dev/images/pilot-discovery-serviceentry.png">
 <meta property="og:image" content="https://haidong.dev/images/pilot-discovery-sequence-all.png">
 <meta property="og:image" content="https://haidong.dev/images/pilot-discovery-sequence-init.png">
 <meta property="og:image" content="https://i.loli.net/2020/09/03/P5eOiE2NwjMxLty.png">
 <meta property="og:image" content="https://i.loli.net/2020/09/03/2IbDaBl91TOgNt7.png">
 <meta property="article:published_time" content="2020-09-03T02:27:16.000Z">
-<meta property="article:modified_time" content="2020-09-24T07:50:44.838Z">
+<meta property="article:modified_time" content="2020-09-24T07:52:11.415Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="cloudnative">
 <meta name="twitter:card" content="summary">
@@ -141,7 +141,7 @@
       
         <time datetime="2020-09-03T02:27:16.000Z" itemprop="datePublished">2020-09-03</time>
         
-        (Updated: <time datetime="2020-09-24T07:50:44.838Z" itemprop="dateModified">2020-09-24</time>)
+        (Updated: <time datetime="2020-09-24T07:52:11.415Z" itemprop="dateModified">2020-09-24</time>)
         
       
     </div>
@@ -189,7 +189,7 @@
 <p><code>Config Controller</code> 比较核心的就是对接 <code>Kubernetes</code>，从 <code>kube-apiserver</code> 中 <code>Watch</code> 集群中的 <code>VirtualService</code>、<code>ServiceEntry</code>、<code>DestinationRules</code> 等配置信息，有变化则生成 <code>PushRequest</code> 推送至 <code>EnvoyXdsServer</code> 中的推送队列。除此之外，还支持对接 <code>MCP(Mesh Configuration Protocol)</code> 协议的 <code>gRPC Server</code>，如 <code>Nacos</code> 的 <code>MCP</code> 服务等，只需要在 <code>meshconfig</code> 中配置 <code>configSources</code> 即可。最后一种是基于内存的 <code>Config Controller</code> 实现，通过 <code>Watch</code> 一个文件目录，加载目录中的 <code>yaml</code> 文件生成配置数据，主要用来测试。</p>
 <p><code>Service Controller</code> 目前原生支持 <code>Kubernetes</code> 和 <code>Consul</code>，注册在这些注册中心中的服务可以无痛接入 <code>Mesh</code>，另外一种比较特殊，就是 <code>ServiceEntryStore</code>，它本质是储存在 <code>Config Controller</code> 中的 <code>Istio</code> 配置数据，但它描述的却是集群外部的服务信息，详情可阅读文档 <a target="_blank" rel="noopener" href="https://istio.io/latest/docs/reference/config/networking/service-entry/">ServiceEntry</a>，<code>Istio</code> 通过它将集群外部，如部署在虚拟机中的服务、非 <code>Kubernetes</code> 的原生服务同步到 <code>Istio</code> 中，纳入网格统一进行流量控制和路由，所以 <code>ServiceEntryStore</code> 也可以视为一种注册中心。还有一种就是 <code>Mock Service Registry</code>，主要用来测试。</p>
 <p><code>ServiceEntryStore</code> 从 <code>Config Controller</code> 到 <code>Service Controller</code> 的转化流程大致如图（后续会做详细的代码分析，这里简单了解一下即可）：</p>
-<p><img src="/images/pilot-discovery-serviceentrystore.png" alt="pilot-discovery-serviceentrystore"></p>
+<p><img src="/images/pilot-discovery-serviceentry.png" alt="pilot-discovery-serviceentrystore"></p>
 <p><code>ConfigStores</code> 是一个列表，里面存储了各类 <code>Istio</code> 配置文件，包括 <code>ServiceEntry</code> 、<code>WorkloadEntry</code> 等服务数据，也包括 <code>VirtualService</code>、<code>DestinationRules</code>、<code>Sidecar</code> 等流量控制、路由规则的配置数据，<code>pilot-discovery</code> 将这些 <code>ConfigStores</code> 聚合成一个 <code>configController</code> 统一进行管理，之后再从其中衍生出 <code>IstioConfigStore</code>，将其作为 <code>serviceEntryStore</code> 的配置源。<code>serviceEntryStore</code> 其实就是 <code>ServiceEntry Controller</code>，响应 <code>ServiceEntry</code> 和 <code>WorkloadEntry</code> 这类服务信息的变化。</p>
 <p><code>EnvoyXdsServer</code> 比较核心，一切与 <code>xDS</code> 协议相关的接收、转换、下发操作都由它完成。<code>EnvoyXdsServer</code> 对接所有集群中的边车代理，如 <code>Envoy</code>、<code>MOSN</code> 等，当配置或服务发生变化时主动推送，也会响应代理发送的请求，依据请求的信息下发相应的 <code>xDS</code> 配置。</p>
 <p>理解了这三个核心组件的定义，就能比较好的理解下面分析的各类流程了。</p>
