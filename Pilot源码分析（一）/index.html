@@ -13,18 +13,18 @@
 <meta property="og:site_name" content="海东的博客">
 <meta property="og:description" content="Istio Pilot 源码分析（一）Istio 作为目前 ServiceMesh 方案中的翘楚，吸引着越来越多的企业及开发者。越来越多的团队想将其应用于微服务的治理，但在实际落地时却因为不了解 Istio 黑盒中的运行机制而左右为难，本文将基于 1.7 的源码讲解 Istio 的核心组件 Pilot 的结构及运行流程，希望对读者应用 Istio 有所助益。 注：本文基于 istio releas">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-struct.png">
-<meta property="og:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-serviceentrystore.png">
-<meta property="og:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-sequence-all.png">
-<meta property="og:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-sequence-init.png">
+<meta property="og:image" content="https://haidong.dev/images/pilot-discovery-struct.png">
+<meta property="og:image" content="https://haidong.dev/images/pilot-discovery-serviceentrystore.png">
+<meta property="og:image" content="https://haidong.dev/images/pilot-discovery-sequence-all.png">
+<meta property="og:image" content="https://haidong.dev/images/pilot-discovery-sequence-init.png">
 <meta property="og:image" content="https://i.loli.net/2020/09/03/P5eOiE2NwjMxLty.png">
 <meta property="og:image" content="https://i.loli.net/2020/09/03/2IbDaBl91TOgNt7.png">
 <meta property="article:published_time" content="2020-09-03T02:27:16.000Z">
-<meta property="article:modified_time" content="2020-09-24T07:36:38.294Z">
+<meta property="article:modified_time" content="2020-09-24T07:50:44.838Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="cloudnative">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/images/pilot-discovery-struct.png">
+<meta name="twitter:image" content="https://haidong.dev/images/pilot-discovery-struct.png">
     
     
         
@@ -141,7 +141,7 @@
       
         <time datetime="2020-09-03T02:27:16.000Z" itemprop="datePublished">2020-09-03</time>
         
-        (Updated: <time datetime="2020-09-24T07:36:38.294Z" itemprop="dateModified">2020-09-24</time>)
+        (Updated: <time datetime="2020-09-24T07:50:44.838Z" itemprop="dateModified">2020-09-24</time>)
         
       
     </div>
@@ -179,7 +179,7 @@
 <li><code>pilot-agent</code></li>
 </ul>
 <p>其中 <code>pilot-agent</code> 负责数据面 <code>Sidecar</code> 实例的生命周期管理，而 <code>pilot-discovery</code> 负责控制面流量管理配置及路由规则的生成和下发。</p>
-<h2 id="宏观架构"><a href="#宏观架构" class="headerlink" title="宏观架构"></a>宏观架构</h2><p><code>pilot-discovery</code> 的核心组件如图：<br><img src="./images/pilot-discovery-struct.png" alt="pilot-discovery-struct"></p>
+<h2 id="宏观架构"><a href="#宏观架构" class="headerlink" title="宏观架构"></a>宏观架构</h2><p><code>pilot-discovery</code> 的核心组件如图：<br><img src="/images/pilot-discovery-struct.png" alt="pilot-discovery-struct"></p>
 <p>其中 <code>Server</code> 为 <code>pilot-discovery</code> 的主服务，包含了三个比较重要的组件：</p>
 <ul>
 <li><code>Config Controller</code>：从不同来源接收流量控制和路由规则等 <code>Istio</code> 的配置，并响应各类事件。</li>
@@ -189,16 +189,16 @@
 <p><code>Config Controller</code> 比较核心的就是对接 <code>Kubernetes</code>，从 <code>kube-apiserver</code> 中 <code>Watch</code> 集群中的 <code>VirtualService</code>、<code>ServiceEntry</code>、<code>DestinationRules</code> 等配置信息，有变化则生成 <code>PushRequest</code> 推送至 <code>EnvoyXdsServer</code> 中的推送队列。除此之外，还支持对接 <code>MCP(Mesh Configuration Protocol)</code> 协议的 <code>gRPC Server</code>，如 <code>Nacos</code> 的 <code>MCP</code> 服务等，只需要在 <code>meshconfig</code> 中配置 <code>configSources</code> 即可。最后一种是基于内存的 <code>Config Controller</code> 实现，通过 <code>Watch</code> 一个文件目录，加载目录中的 <code>yaml</code> 文件生成配置数据，主要用来测试。</p>
 <p><code>Service Controller</code> 目前原生支持 <code>Kubernetes</code> 和 <code>Consul</code>，注册在这些注册中心中的服务可以无痛接入 <code>Mesh</code>，另外一种比较特殊，就是 <code>ServiceEntryStore</code>，它本质是储存在 <code>Config Controller</code> 中的 <code>Istio</code> 配置数据，但它描述的却是集群外部的服务信息，详情可阅读文档 <a target="_blank" rel="noopener" href="https://istio.io/latest/docs/reference/config/networking/service-entry/">ServiceEntry</a>，<code>Istio</code> 通过它将集群外部，如部署在虚拟机中的服务、非 <code>Kubernetes</code> 的原生服务同步到 <code>Istio</code> 中，纳入网格统一进行流量控制和路由，所以 <code>ServiceEntryStore</code> 也可以视为一种注册中心。还有一种就是 <code>Mock Service Registry</code>，主要用来测试。</p>
 <p><code>ServiceEntryStore</code> 从 <code>Config Controller</code> 到 <code>Service Controller</code> 的转化流程大致如图（后续会做详细的代码分析，这里简单了解一下即可）：</p>
-<p><img src="./images/pilot-discovery-serviceentrystore.png" alt="pilot-discovery-serviceentrystore"></p>
+<p><img src="/images/pilot-discovery-serviceentrystore.png" alt="pilot-discovery-serviceentrystore"></p>
 <p><code>ConfigStores</code> 是一个列表，里面存储了各类 <code>Istio</code> 配置文件，包括 <code>ServiceEntry</code> 、<code>WorkloadEntry</code> 等服务数据，也包括 <code>VirtualService</code>、<code>DestinationRules</code>、<code>Sidecar</code> 等流量控制、路由规则的配置数据，<code>pilot-discovery</code> 将这些 <code>ConfigStores</code> 聚合成一个 <code>configController</code> 统一进行管理，之后再从其中衍生出 <code>IstioConfigStore</code>，将其作为 <code>serviceEntryStore</code> 的配置源。<code>serviceEntryStore</code> 其实就是 <code>ServiceEntry Controller</code>，响应 <code>ServiceEntry</code> 和 <code>WorkloadEntry</code> 这类服务信息的变化。</p>
 <p><code>EnvoyXdsServer</code> 比较核心，一切与 <code>xDS</code> 协议相关的接收、转换、下发操作都由它完成。<code>EnvoyXdsServer</code> 对接所有集群中的边车代理，如 <code>Envoy</code>、<code>MOSN</code> 等，当配置或服务发生变化时主动推送，也会响应代理发送的请求，依据请求的信息下发相应的 <code>xDS</code> 配置。</p>
 <p>理解了这三个核心组件的定义，就能比较好的理解下面分析的各类流程了。</p>
-<p><code>pilot-discovery</code> 的整个业务流程梳理如下，可以先大概浏览一遍，之后我们逐一进行分析:<br><img src="./images/pilot-discovery-sequence-all.png" alt="pilot-discovery-sequence-all"></p>
+<p><code>pilot-discovery</code> 的整个业务流程梳理如下，可以先大概浏览一遍，之后我们逐一进行分析:<br><img src="/images/pilot-discovery-sequence-all.png" alt="pilot-discovery-sequence-all"></p>
 <h2 id="启动流程梳理"><a href="#启动流程梳理" class="headerlink" title="启动流程梳理"></a>启动流程梳理</h2><p>首先详细看一下 <code>pilot-discovery</code> 的启动流程。<code>pilot-discovery</code> 组件的入口代码在 <code>istio/pilot/cmd/pilot-discovery</code> 中。该目录中包含两个文件: <code>main.go</code> 和 <code>request.go</code>。<code>main.go</code> 中定义了 <code>pilot-discovery</code> 根命令及 <code>discovery</code> 命令，是启动服务发现及配置下发的主流程; 另一个文件 <code>request.go</code> 中定义了 <code>request</code> 命令，用来请求 <code>Pilot</code> 中的 <code>metrics/debug</code> 接口，多用来调试。</p>
 <p><code>main.go</code> 中 <code>discoveryCmd</code>的 <code>RunE</code> 函数定义了启动过程，代码如下：</p>
 <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 创建一个接收空结构的 stop channel 用来停止所有 servers</span></span><br><span class="line">stop := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建服务发现的 Server</span></span><br><span class="line">discoveryServer, err := bootstrap.NewServer(serverArgs)</span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;failed to create discovery service: %v&quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 运行 Server 中注册的所有服务</span></span><br><span class="line"><span class="keyword">if</span> err := discoveryServer.Start(stop); err != <span class="literal">nil</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;failed to start discovery service: %v&quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等待 SIGINT 和 SIGTERM 信号并关闭 stop channel</span></span><br><span class="line">cmd.WaitSignal(stop)</span><br></pre></td></tr></table></figure>
 
-<p>启动流程如图所示：<br><img src="./images/pilot-discovery-sequence-init.png" alt="pilot-discovery-init"></p>
+<p>启动流程如图所示：<br><img src="/images/pilot-discovery-sequence-init.png" alt="pilot-discovery-init"></p>
 <h3 id="初始化流程"><a href="#初始化流程" class="headerlink" title="初始化流程"></a>初始化流程</h3><p>接下来介绍 <code>discoveryServer</code> ，即 <code>pilot-discovery</code> 组件的核心。在这之前先看下 <code>Server</code> 的结构，代码位于 <code>istio/pilot/pkg/bootstrap/server.go</code> 文件中。</p>
 <p><code>Server</code> 的关键字段如下：</p>
 <figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Server <span class="keyword">struct</span> &#123;</span><br><span class="line">  XDSServer *xds.DiscoveryServer  <span class="comment">// Xds 服务</span></span><br><span class="line">  environment *model.Environment  <span class="comment">// Pilot 环境所需的 API 集合</span></span><br><span class="line">  kubeRegistry *kubecontroller.Controller   <span class="comment">// 处理 Kubernetes 主集群的注册中心</span></span><br><span class="line">  multicluster *kubecontroller.Multicluster <span class="comment">// 处理 Kubernetes 多个集群的注册中心</span></span><br><span class="line">  configController  model.ConfigStoreCache  <span class="comment">// 统一处理配置数据（如 VirtualService 等) 的 Controller</span></span><br><span class="line">  ConfigStores      []model.ConfigStoreCache <span class="comment">// 不同配置信息的缓存器，提供 Get、List、Create 等方法</span></span><br><span class="line">  serviceEntryStore *serviceentry.ServiceEntryStore <span class="comment">// 单独处理 ServiceEntry 的 Controller</span></span><br><span class="line">  fileWatcher filewatcher.FileWatcher <span class="comment">// 文件监听器，主要 watch meshconfig 和 networks 配置文件等</span></span><br><span class="line">  startFuncs []startFunc <span class="comment">// 保存了上述所有服务的启动函数，便于在 Start() 方法中批量启动及管理</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
