@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="记一次 Pilot 推送性能的优化过程背景及问题最近在落地 ServiceMesh 的过程中，遇到了一个 Istio 控制面 Pilot 下发 xDS 配置过慢的性能问题，背景如下： 集群环境中 ServiceEntry、DestinationRule、VirtualService、WorkloadEntry 数目均为 2200 左右，当测试脚本模拟服务实例上下线时，监测数据面日志发现 MOSN">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记一次 Pilot 推送性能的优化过程">
+<meta property="og:url" content="https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/index.html">
+<meta property="og:site_name" content="海东的博客">
+<meta property="og:description" content="记一次 Pilot 推送性能的优化过程背景及问题最近在落地 ServiceMesh 的过程中，遇到了一个 Istio 控制面 Pilot 下发 xDS 配置过慢的性能问题，背景如下： 集群环境中 ServiceEntry、DestinationRule、VirtualService、WorkloadEntry 数目均为 2200 左右，当测试脚本模拟服务实例上下线时，监测数据面日志发现 MOSN">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://haidong.dev/Users/zhd/Dropbox/orgs/images/Work/2020-09-28_11-04-03_screenshot.png">
+<meta property="article:published_time" content="2020-09-15T02:27:16.000Z">
+<meta property="article:modified_time" content="2020-09-30T03:08:01.812Z">
+<meta property="article:author" content="zhd173">
+<meta property="article:tag" content="cloudnative">
+<meta property="article:tag" content="go">
+<meta property="article:tag" content="servicemesh">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://haidong.dev/Users/zhd/Dropbox/orgs/images/Work/2020-09-28_11-04-03_screenshot.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=16">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=192" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="https://www.gravatar.com/avatar/b2af0ca47828868e8906600eb33f51f3?s=180">
+          
+        
+    
+    <!-- title -->
+    <title>记一次 Pilot 推送性能的优化过程</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 5.1.1"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&text=记一次 Pilot 推送性能的优化过程"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&is_video=false&description=记一次 Pilot 推送性能的优化过程"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=记一次 Pilot 推送性能的优化过程&body=Check out this article: https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&name=记一次 Pilot 推送性能的优化过程&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&t=记一次 Pilot 推送性能的优化过程"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AE%B0%E4%B8%80%E6%AC%A1-Pilot-%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E7%9A%84%E4%BC%98%E5%8C%96%E8%BF%87%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">记一次 Pilot 推送性能的优化过程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%E5%8F%8A%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.</span> <span class="toc-text">背景及问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5"><span class="toc-number">1.2.</span> <span class="toc-text">问题排查</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E5%8C%96%E6%80%9D%E8%B7%AF"><span class="toc-number">1.3.</span> <span class="toc-text">优化思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E6%AF%8F%E4%B8%AA%E9%9B%86%E7%BE%A4%E5%88%9B%E5%BB%BA%E9%BB%98%E8%AE%A4%E7%9A%84-SidecarScope"><span class="toc-number">1.3.1.</span> <span class="toc-text">为每个集群创建默认的 SidecarScope</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%8F%E5%B0%91-Pilot-%E4%B8%AD%E6%97%A0%E6%95%88%E7%9A%84-cluster"><span class="toc-number">1.3.2.</span> <span class="toc-text">减少 Pilot 中无效的 cluster</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E9%97%AD-EDS-%E7%9A%84%E9%98%B2%E6%8A%96%EF%BC%8C%E4%BD%BF-EDS-%E5%AE%9E%E6%97%B6%E4%B8%8B%E5%8F%91%E9%85%8D%E7%BD%AE%EF%BC%8C%E4%B8%8D%E7%94%A8%E5%88%9D%E5%A7%8B%E5%8C%96-PushContext"><span class="toc-number">1.3.3.</span> <span class="toc-text">关闭 EDS 的防抖，使 EDS 实时下发配置，不用初始化 PushContext</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E5%8C%96-Pilot-%E7%9A%84%E9%98%B2%E6%8A%96%E5%8F%8A%E8%8A%82%E6%B5%81%E5%8F%82%E6%95%B0"><span class="toc-number">1.3.4.</span> <span class="toc-text">优化 Pilot 的防抖及节流参数</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        记一次 Pilot 推送性能的优化过程
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">海东的博客</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2020-09-15T02:27:16.000Z" itemprop="datePublished">2020-09-15</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fas fa-tag"></i>
+        <a class="tag-link-link" href="/tags/cloudnative/" rel="tag">cloudnative</a>, <a class="tag-link-link" href="/tags/go/" rel="tag">go</a>, <a class="tag-link-link" href="/tags/servicemesh/" rel="tag">servicemesh</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h1 id="记一次-Pilot-推送性能的优化过程"><a href="#记一次-Pilot-推送性能的优化过程" class="headerlink" title="记一次 Pilot 推送性能的优化过程"></a>记一次 Pilot 推送性能的优化过程</h1><h2 id="背景及问题"><a href="#背景及问题" class="headerlink" title="背景及问题"></a>背景及问题</h2><p>最近在落地 ServiceMesh 的过程中，遇到了一个 Istio 控制面 Pilot 下发 xDS 配置过慢的性能问题，背景如下：</p>
+<p>集群环境中 ServiceEntry、DestinationRule、VirtualService、WorkloadEntry 数目均为 2200 左右，当测试脚本模拟服务实例上下线时，监测数据面日志发现 MOSN 获取 xDS 配置较慢，大部分配置从服务开始变动到数据面收到 xDS 推送时间均在 1m20s 左右。</p>
+<p>测试脚本大部分操作为单个服务实例的上下线，按道理 EDS 增量推送下发配置应该很快。遂开始排查具体原因。</p>
+<h2 id="问题排查"><a href="#问题排查" class="headerlink" title="问题排查"></a>问题排查</h2><p>首先用 <code>pprof</code> 分析 CPU 使用时间，命令如下：</p>
+<figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">$ go tool pprof -http <span class="number">127</span>.<span class="number">0</span>.<span class="number">0</span>.<span class="number">1</span>:<span class="number">8089</span> http://[istio-pod-ip]:<span class="number">8080</span>/debug/pprof/profile\?second\=<span class="number">600</span></span><br></pre></td></tr></table></figure>
+
+<p>分析结果如图：</p>
+<p><img src="/Users/zhd/Dropbox/orgs/images/Work/2020-09-28_11-04-03_screenshot.png" alt="img"></p>
+<p>可以看到时间大部分都花在防抖函数 <code>debounce</code> 中。进一步分析发现时间主要花在了 <code>initPushContext</code> 中。<code>debounce</code> 这里做推送主要分为两部分，一个是 ADS ，另一个为 EDS 增量下发。这里主要原因是因为实际的 <code>Push()</code> 函数在做全量推送时初始化 <del>PushContext</del> 过慢，导致 <code>free</code> 一直未释放，后续的 <code>PushRequest</code> 一直被合并，每当延时器 <code>timeChan</code> 工作时发现 <code>free</code> 未释放导致一直顺延。</p>
+<p>相关 <code>debounce</code> 代码片段如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> &#123;</span><br><span class="line">  <span class="keyword">select</span> &#123;</span><br><span class="line">  <span class="keyword">case</span> &lt;-freeCh:</span><br><span class="line">    free = <span class="literal">true</span></span><br><span class="line">    pushWorker()</span><br><span class="line">  <span class="keyword">case</span> r := &lt;-ch:</span><br><span class="line">    <span class="comment">// If reason is not set, record it as an unknown reason</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(r.Reason) == <span class="number">0</span> &#123;</span><br><span class="line">      r.Reason = []model.TriggerReason&#123;model.UnknownTrigger&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> !enableEDSDebounce &amp;&amp; !r.Full &#123;</span><br><span class="line">      <span class="comment">// trigger push now, just for EDS</span></span><br><span class="line">      <span class="keyword">go</span> pushFn(r)</span><br><span class="line">      <span class="keyword">continue</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    lastConfigUpdateTime = time.Now()</span><br><span class="line">    <span class="keyword">if</span> debouncedEvents == <span class="number">0</span> &#123;</span><br><span class="line">      timeChan = time.After(debounceAfter)</span><br><span class="line">      startDebounce = lastConfigUpdateTime</span><br><span class="line">    &#125;</span><br><span class="line">    debouncedEvents++</span><br><span class="line"></span><br><span class="line">    req = req.Merge(r)</span><br><span class="line">  <span class="keyword">case</span> &lt;-timeChan:</span><br><span class="line">    <span class="keyword">if</span> free &#123;</span><br><span class="line">      pushWorker()</span><br><span class="line">    &#125;</span><br><span class="line">  <span class="keyword">case</span> &lt;-stopCh:</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里可以看到在调用 <code>push()</code> 的时候必须等 <code>pushFn(req)</code> 完成后才会释放 <code>free</code> :</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">push := <span class="function"><span class="keyword">func</span><span class="params">(req *model.PushRequest)</span></span> &#123;</span><br><span class="line">  pushFn(req)</span><br><span class="line">  freeCh &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>为什么 <code>Push()</code> 这么慢呢？主要是在 <code>req.Full</code> 做全量推送的时候，需要初始化 <code>PushContext</code> ，初始化 <code>PushContext</code> 的过程中初始化了 <code>SidecarScope</code> （ pprof 分析是创建默认 <code>SidecarScope</code> 的地方慢了 ）:</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Must be initialized in the end</span></span><br><span class="line"><span class="comment">// Sidecars need to be updated if services, virtual services, destination rules, or the sidecar configs change</span></span><br><span class="line"><span class="keyword">if</span> servicesChanged || virtualServicesChanged || destinationRulesChanged || sidecarsChanged &#123;</span><br><span class="line">  <span class="keyword">if</span> err := ps.initSidecarScopes(env); err != <span class="literal">nil</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> err</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  ps.sidecarsByNamespace = oldPushContext.sidecarsByNamespace</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当 <code>ServiceEntry</code> 、 <code>DestinationRule</code> 、 <code>VirtualService</code> 、 <code>Sidecar</code> 发生变化都会触发 <code>initSidecarScopes</code> 。</p>
+<p><code>Sidecar</code> 有两种，一种是带 <code>WorkloadSelector</code> 的，一种是不带的。不带 <code>Selector</code> 的话就是对这个命名空间所有服务生效。如果没有手动创建默认的 <code>Sidecar</code> ，Pilot 会通过 <code>DefaultSidecarScopeForNamespace</code> 为当前命名空间创建一个默认的 <code>Sidecar</code> ，他会将网格中所有的服务都遍历一遍，写入 <code>SidecarScope</code> 中。</p>
+<p>这就是慢的地方。创建默认的 <code>Sidecar</code> 有两个循环，第一个是：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DefaultSidecarScopeForNamespace is a sidecar scope object with a default catch all egress listener</span></span><br><span class="line"><span class="comment">// that matches the default Istio behavior: a sidecar has listeners for all services in the mesh</span></span><br><span class="line"><span class="comment">// We use this scope when the user has not set any sidecar Config for a given config namespace.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">DefaultSidecarScopeForNamespace</span><span class="params">(ps *PushContext, configNamespace <span class="keyword">string</span>)</span> *<span class="title">SidecarScope</span></span> &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// Now that we have all the services that sidecars using this scope (in</span></span><br><span class="line">  <span class="comment">// this config namespace) will see, identify all the destinationRules</span></span><br><span class="line">  <span class="comment">// that these services need</span></span><br><span class="line">  <span class="keyword">for</span> _, s := <span class="keyword">range</span> out.services &#123;</span><br><span class="line">    out.servicesByHostname[s.Hostname] = s</span><br><span class="line">    <span class="keyword">if</span> dr := ps.DestinationRule(&amp;dummyNode, s); dr != <span class="literal">nil</span> &#123;</span><br><span class="line">      out.destinationRules[s.Hostname] = dr</span><br><span class="line">    &#125;</span><br><span class="line">    out.AddConfigDependencies(ConfigKey&#123;</span><br><span class="line">      Kind:      gvk.ServiceEntry,</span><br><span class="line">      Name:      <span class="keyword">string</span>(s.Hostname),</span><br><span class="line">      Namespace: s.Attributes.Namespace,</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个 <code>out.services</code> 的数目在 8000 ~ 9000 个，因为我们 <code>ServiceEntry</code> 的数目大概在 2200 个，在定义 <code>VirtualService</code> 的时候定义了 3 个 <code>HttpMatch</code> ，也就是蓝绿灰分组，再加上一个兜底的默认 <code>Match</code> ，总共是 4 个 <code>HttpMatch</code> ，这在生成 Pilot 定义的 <code>Service</code> 时每个 subset 都会定义一个，即每个服务会有 4 个 Service，其实这个 Service 数目对应就是 xDS 中的 cluster 的数目。所以这一层循环是 8000~9000 次。</p>
+<p>再一层的循环就是 <code>ps.DestinationRule</code> 中的 <code>MostSpecificHostMatch</code> ，也是 pprof 提示的地方，这里又把当前命名空间所有的 <code>DestinationRule</code> 都传进来做了一次遍历：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="comment">// MostSpecificHostMatch compares the elements of the stack to the needle, and returns the longest stack element</span></span><br><span class="line"><span class="comment">// matching the needle, or false if no element in the stack matches the needle.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">MostSpecificHostMatch</span><span class="params">(needle host.Name, stack []host.Name)</span> <span class="params">(host.Name, <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">  matches := []host.Name&#123;&#125;</span><br><span class="line">  <span class="keyword">for</span> _, h := <span class="keyword">range</span> stack &#123;</span><br><span class="line">    <span class="keyword">if</span> needle == h &#123;</span><br><span class="line">      <span class="comment">// exact match, return immediately</span></span><br><span class="line">      <span class="keyword">return</span> needle, <span class="literal">true</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> needle.SubsetOf(h) &#123;</span><br><span class="line">      matches = <span class="built_in">append</span>(matches, h)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> <span class="built_in">len</span>(matches) &gt; <span class="number">0</span> &#123;</span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> return closest match out of all non-exact matching hosts</span></span><br><span class="line">    <span class="keyword">return</span> matches[<span class="number">0</span>], <span class="literal">true</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;&quot;</span>, <span class="literal">false</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以这两次粗略计算共遍历了 8000 * 2000 = 16000000 次，而这些遍历是在做什么呢？做的是字符串的匹配操作：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(n Name)</span> <span class="title">IsWildCarded</span><span class="params">()</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">len</span>(n) &gt; <span class="number">0</span> &amp;&amp; n[<span class="number">0</span>] == <span class="string">&#x27;*&#x27;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="优化思路"><a href="#优化思路" class="headerlink" title="优化思路"></a>优化思路</h2><p>分析到慢的原因，就可以因地制宜想出解决的办法了。</p>
+<h3 id="为每个集群创建默认的-SidecarScope"><a href="#为每个集群创建默认的-SidecarScope" class="headerlink" title="为每个集群创建默认的 SidecarScope"></a>为每个集群创建默认的 SidecarScope</h3><p>包括创建 <code>rootNsSidecarConfig</code> ，更精细化的管理 <code>SidecarScope</code> ，避免使用 Pilot 的 <code>DefaultSidecarScopeForNamespace</code> 方法遍历所有服务。</p>
+<h3 id="减少-Pilot-中无效的-cluster"><a href="#减少-Pilot-中无效的-cluster" class="headerlink" title="减少 Pilot 中无效的 cluster"></a>减少 Pilot 中无效的 cluster</h3><p>目前 Pilot 生成的 cluster 大概是 8000 ，但真正有实例的 cluster 大概 2000 左右，可以想办法把那些没有 endpoint 的实例砍掉。当实例变化时去掉 VirtualService 中多余的 match 。如只有蓝组则去掉绿组灰组的配置，避免创建空的 cluster 徒增计算成本。</p>
+<p>在者就是调整默认 VirtualService 的结构，默认的是所有服务都会创建蓝绿灰三组 subset ，在 VirtualService 中的策略为蓝走蓝，绿走绿，灰走灰，这些默认策略在生成前也应该判断当前的 subset 有没有实例，没有实例就不创建对应的 match 了。</p>
+<h3 id="关闭-EDS-的防抖，使-EDS-实时下发配置，不用初始化-PushContext"><a href="#关闭-EDS-的防抖，使-EDS-实时下发配置，不用初始化-PushContext" class="headerlink" title="关闭 EDS 的防抖，使 EDS 实时下发配置，不用初始化 PushContext"></a>关闭 EDS 的防抖，使 EDS 实时下发配置，不用初始化 PushContext</h3><p>目前的情况是为服务的变化（如 ServiceEntry 和 VirtualService）做的全量推送时，初始化 <code>PushContext</code> 的时候 hang 住了 EDS 的推送，因为 EDS 默认是走防抖的，所以一直被 <code>Merge</code> 。因为 <code>free</code> 一直没有被释放，所以当 <code>timeChan</code> 调用 <code>PushWorker</code> 的时候一直跳过，我们应该不能让服务的推送 hang 住实例的推送。需要关闭 EDS 的防抖，不过对 Pilot 和数据面的 CPU 资源可能占用较多。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> &#123;</span><br><span class="line">  <span class="keyword">case</span> r := &lt;-ch:</span><br><span class="line">    <span class="comment">// If reason is not set, record it as an unknown reason</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(r.Reason) == <span class="number">0</span> &#123;</span><br><span class="line">      r.Reason = []model.TriggerReason&#123;model.UnknownTrigger&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> !enableEDSDebounce &amp;&amp; !r.Full &#123;</span><br><span class="line">      <span class="comment">// trigger push now, just for EDS</span></span><br><span class="line">      <span class="keyword">go</span> pushFn(r)</span><br><span class="line">      <span class="keyword">continue</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>关闭 EDS 防抖参数的说明：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">EnableEDSDebounce = env.RegisterBoolVar(</span><br><span class="line">  <span class="string">&quot;PILOT_ENABLE_EDS_DEBOUNCE&quot;</span>,</span><br><span class="line">  <span class="literal">true</span>,</span><br><span class="line">  <span class="string">&quot;If enabled, Pilot will include EDS pushes in the push debouncing, configured by PILOT_DEBOUNCE_AFTER and PILOT_DEBOUNCE_MAX.&quot;</span>+</span><br><span class="line">    <span class="string">&quot; EDS pushes may be delayed, but there will be fewer pushes. By default this is enabled&quot;</span>,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="优化-Pilot-的防抖及节流参数"><a href="#优化-Pilot-的防抖及节流参数" class="headerlink" title="优化 Pilot 的防抖及节流参数"></a>优化 Pilot 的防抖及节流参数</h3><p>如果集群中 Pilot 单独使用了一台或几台性能很高的节点，可以将节流参数 <code>PILOT_PUSH_THROTTLE</code> 调高一点，追求推送速度的话可以调低防抖的 <code>PILOT_DEBOUNCE_MAX</code> 时间（不过像本文防抖被 Push hang 住了调整这个参数没什么作用），<code>PILOT_DEBOUNCE_AFTER</code> 时间也可以调小一些，可以让变化实时生效。不过这些参数还是要根据实际情况做一些平衡，以为追求实时推送也会为控制面带来不必要的压力，反倒降低了整体的推送效率。</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AE%B0%E4%B8%80%E6%AC%A1-Pilot-%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E7%9A%84%E4%BC%98%E5%8C%96%E8%BF%87%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">记一次 Pilot 推送性能的优化过程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%E5%8F%8A%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.</span> <span class="toc-text">背景及问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5"><span class="toc-number">1.2.</span> <span class="toc-text">问题排查</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E5%8C%96%E6%80%9D%E8%B7%AF"><span class="toc-number">1.3.</span> <span class="toc-text">优化思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E6%AF%8F%E4%B8%AA%E9%9B%86%E7%BE%A4%E5%88%9B%E5%BB%BA%E9%BB%98%E8%AE%A4%E7%9A%84-SidecarScope"><span class="toc-number">1.3.1.</span> <span class="toc-text">为每个集群创建默认的 SidecarScope</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%8F%E5%B0%91-Pilot-%E4%B8%AD%E6%97%A0%E6%95%88%E7%9A%84-cluster"><span class="toc-number">1.3.2.</span> <span class="toc-text">减少 Pilot 中无效的 cluster</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E9%97%AD-EDS-%E7%9A%84%E9%98%B2%E6%8A%96%EF%BC%8C%E4%BD%BF-EDS-%E5%AE%9E%E6%97%B6%E4%B8%8B%E5%8F%91%E9%85%8D%E7%BD%AE%EF%BC%8C%E4%B8%8D%E7%94%A8%E5%88%9D%E5%A7%8B%E5%8C%96-PushContext"><span class="toc-number">1.3.3.</span> <span class="toc-text">关闭 EDS 的防抖，使 EDS 实时下发配置，不用初始化 PushContext</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E5%8C%96-Pilot-%E7%9A%84%E9%98%B2%E6%8A%96%E5%8F%8A%E8%8A%82%E6%B5%81%E5%8F%82%E6%95%B0"><span class="toc-number">1.3.4.</span> <span class="toc-text">优化 Pilot 的防抖及节流参数</span></a></li></ol></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&text=记一次 Pilot 推送性能的优化过程"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&is_video=false&description=记一次 Pilot 推送性能的优化过程"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=记一次 Pilot 推送性能的优化过程&body=Check out this article: https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&title=记一次 Pilot 推送性能的优化过程"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&name=记一次 Pilot 推送性能的优化过程&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=https://haidong.dev/%E8%AE%B0%E4%B8%80%E6%AC%A1Pilot%E6%8E%A8%E9%80%81%E6%80%A7%E8%83%BD%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B/&t=记一次 Pilot 推送性能的优化过程"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2020
+    zhd173
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/archives/">Blog</a></li>
+         
+          <li><a href="/gtags/">Tags</a></li>
+         
+          <li><a href="/TODO/">TODO</a></li>
+         
+          <li><a target="_blank" rel="noopener" href="https://github.com/zhd173">GitHub</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-125225753-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'haidongdev';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+
+</body>
+</html>
