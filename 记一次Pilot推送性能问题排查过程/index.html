@@ -14,8 +14,8 @@
 <meta property="og:description" content="记一次 Pilot 推送性能的优化过程背景及问题最近在落地 ServiceMesh 的过程中，遇到了一个 Istio 控制面 Pilot 下发 xDS 配置过慢的性能问题，背景如下： 集群环境中 ServiceEntry、DestinationRule、VirtualService、WorkloadEntry 数目均为 2200 左右，当测试脚本模拟服务实例上下线时，监测数据面日志发现 MOSN">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://haidong.dev/Users/zhd/Dropbox/orgs/images/Work/2020-09-28_11-04-03_screenshot.png">
-<meta property="article:published_time" content="2020-09-15T02:27:16.000Z">
-<meta property="article:modified_time" content="2020-09-30T03:08:01.812Z">
+<meta property="article:published_time" content="2020-09-30T02:27:16.000Z">
+<meta property="article:modified_time" content="2020-09-30T03:08:46.035Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="cloudnative">
 <meta property="article:tag" content="go">
@@ -81,10 +81,8 @@
     <span id="actions">
       <ul>
         
-        <li><a class="icon" href="/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
-        
-        <li><a class="icon" href="/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%80%EF%BC%89/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" href="/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -136,7 +134,7 @@
       
     <div class="postdate">
       
-        <time datetime="2020-09-15T02:27:16.000Z" itemprop="datePublished">2020-09-15</time>
+        <time datetime="2020-09-30T02:27:16.000Z" itemprop="datePublished">2020-09-30</time>
         
       
     </div>
