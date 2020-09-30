@@ -6,18 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="Istio Pilot 源码分析（二）了解了 Pilot 源码的基本结构和启动流程之后，我们可以深入探索 Pilot 究竟是怎么下发 xDS 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 Kubernetes 原生的服务（如存在于虚拟机的服务、 Dubbo 服务等）到底是怎么注册并且经过一系列转化下">
+    <meta name="description" content="了解了 Pilot 源码的基本结构和启动流程之后，我们可以深入探索 Pilot 究竟是怎么下发 xDS 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 Kubernetes 原生的服务（如存在于虚拟机的服务、 Dubbo 服务等）到底是怎么注册并且经过一系列转化下发至数据面的？ 带着这些问题，开始我们">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Istio Pilot 源码分析（二）">
 <meta property="og:url" content="https://haidong.dev/Pilot%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
 <meta property="og:site_name" content="海东的博客">
-<meta property="og:description" content="Istio Pilot 源码分析（二）了解了 Pilot 源码的基本结构和启动流程之后，我们可以深入探索 Pilot 究竟是怎么下发 xDS 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 Kubernetes 原生的服务（如存在于虚拟机的服务、 Dubbo 服务等）到底是怎么注册并且经过一系列转化下">
+<meta property="og:description" content="了解了 Pilot 源码的基本结构和启动流程之后，我们可以深入探索 Pilot 究竟是怎么下发 xDS 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 Kubernetes 原生的服务（如存在于虚拟机的服务、 Dubbo 服务等）到底是怎么注册并且经过一系列转化下发至数据面的？ 带着这些问题，开始我们">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://haidong.dev/images/serviceentrystore-init.png">
 <meta property="og:image" content="https://haidong.dev/images/workloadentry-update-sequence.png">
 <meta property="og:image" content="https://haidong.dev/images/serviceentryhandler-sequence.png">
 <meta property="article:published_time" content="2020-09-15T02:27:16.000Z">
-<meta property="article:modified_time" content="2020-09-30T02:35:14.286Z">
+<meta property="article:modified_time" content="2020-09-30T03:19:18.592Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="cloudnative">
 <meta property="article:tag" content="go">
@@ -114,7 +114,7 @@
 
     </div>
     <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Istio-Pilot-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Istio Pilot 源码分析（二）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#ServiceEntryStore"><span class="toc-number">1.1.</span> <span class="toc-text">ServiceEntryStore</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#workloadEntryHandler"><span class="toc-number">1.1.1.</span> <span class="toc-text">workloadEntryHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#serviceEntryHandler"><span class="toc-number">1.1.2.</span> <span class="toc-text">serviceEntryHandler</span></a></li></ol></li></ol></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ServiceEntryStore"><span class="toc-number">1.</span> <span class="toc-text">ServiceEntryStore</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#workloadEntryHandler"><span class="toc-number">1.1.</span> <span class="toc-text">workloadEntryHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#serviceEntryHandler"><span class="toc-number">1.2.</span> <span class="toc-text">serviceEntryHandler</span></a></li></ol></li></ol>
     </div>
   </span>
 </div>
@@ -158,7 +158,7 @@
   
 
   <div class="content" itemprop="articleBody">
-    <h1 id="Istio-Pilot-源码分析（二）"><a href="#Istio-Pilot-源码分析（二）" class="headerlink" title="Istio Pilot 源码分析（二）"></a>Istio Pilot 源码分析（二）</h1><p>了解了 <code>Pilot</code> 源码的基本结构和启动流程之后，我们可以深入探索 <code>Pilot</code> 究竟是怎么下发 <code>xDS</code> 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 <code>Kubernetes</code> 原生的服务（如存在于虚拟机的服务、 <code>Dubbo</code> 服务等）到底是怎么注册并且经过一系列转化下发至数据面的？</p>
+    <p>了解了 <code>Pilot</code> 源码的基本结构和启动流程之后，我们可以深入探索 <code>Pilot</code> 究竟是怎么下发 <code>xDS</code> 协议的，以及协议的生成逻辑。相信大家都会有这些疑问：控制面与数据面详细的交互过程是什么？到底什么时候才会增量推送？增量推送判断的逻辑是什么？ 非 <code>Kubernetes</code> 原生的服务（如存在于虚拟机的服务、 <code>Dubbo</code> 服务等）到底是怎么注册并且经过一系列转化下发至数据面的？</p>
 <p>带着这些问题，开始我们今天对 <code>Pilot</code> 的探索。</p>
 <p><em>注：本文基于 <code>istio release-1.7</code> 分支分析，其他版本的代码结构会有所不同。</em></p>
 <h2 id="ServiceEntryStore"><a href="#ServiceEntryStore" class="headerlink" title="ServiceEntryStore"></a>ServiceEntryStore</h2><p>在多点落地 <code>ServiceMesh</code> 的过程中，大量的用到了 <code>ServiceEntry</code> ，每一个 <code>Dubbo</code> 服务都会映射一个 <code>ServiceEntry</code> 创建在 <code>Kubernetes</code> 里。 <code>ServiceEntry</code> 的作用就是将集群外部的服务注册到 <code>Pilot</code> 中，再统一由 <code>ServiceController</code> 进行管理。相应的，管理外部服务实例的对象为 <code>WorkloadEntry</code> ， <code>ServiceEntry</code> 可以通过 <code>LabelSelector</code> 筛选出自身对应的实例。</p>
@@ -254,7 +254,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Istio-Pilot-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">Istio Pilot 源码分析（二）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#ServiceEntryStore"><span class="toc-number">1.1.</span> <span class="toc-text">ServiceEntryStore</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#workloadEntryHandler"><span class="toc-number">1.1.1.</span> <span class="toc-text">workloadEntryHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#serviceEntryHandler"><span class="toc-number">1.1.2.</span> <span class="toc-text">serviceEntryHandler</span></a></li></ol></li></ol></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ServiceEntryStore"><span class="toc-number">1.</span> <span class="toc-text">ServiceEntryStore</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#workloadEntryHandler"><span class="toc-number">1.1.</span> <span class="toc-text">workloadEntryHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#serviceEntryHandler"><span class="toc-number">1.2.</span> <span class="toc-text">serviceEntryHandler</span></a></li></ol></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">

@@ -14,7 +14,7 @@
 <meta property="og:description" content="经典的例子class Date(object):    def __init__(self, day&#x3D;0, month&#x3D;0, year&#x3D;0):        self.day &#x3D; day        self.month &#x3D; month        self.year &#x3D; year    @classmethod    def from_string(cls, date_as_string):">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2017-12-20T06:52:28.000Z">
-<meta property="article:modified_time" content="2018-09-05T06:04:26.618Z">
+<meta property="article:modified_time" content="2020-09-30T03:29:40.608Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="python">
 <meta name="twitter:card" content="summary">
@@ -108,7 +108,7 @@
 
     </div>
     <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%8F%E5%85%B8%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="toc-number">1.</span> <span class="toc-text">经典的例子</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#classmethod"><span class="toc-number">2.</span> <span class="toc-text">classmethod</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#staticmethod"><span class="toc-number">3.</span> <span class="toc-text">staticmethod</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%8F%E5%85%B8%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="toc-number">1.</span> <span class="toc-text">经典的例子</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#classmethod"><span class="toc-number">2.</span> <span class="toc-text">classmethod</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#staticmethod"><span class="toc-number">3.</span> <span class="toc-text">staticmethod</span></a></li></ol>
     </div>
   </span>
 </div>
@@ -152,12 +152,12 @@
   
 
   <div class="content" itemprop="articleBody">
-    <h1 id="经典的例子"><a href="#经典的例子" class="headerlink" title="经典的例子"></a>经典的例子</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Date</span>(<span class="params">object</span>):</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, day=<span class="number">0</span>, month=<span class="number">0</span>, year=<span class="number">0</span></span>):</span></span><br><span class="line">        self.day = day</span><br><span class="line">        self.month = month</span><br><span class="line">        self.year = year</span><br><span class="line"></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">from_string</span>(<span class="params">cls, date_as_string</span>):</span></span><br><span class="line">        day, month, year = map(int, date_as_string.split(<span class="string">&#x27;-&#x27;</span>))</span><br><span class="line">        date1 = cls(day, month, year)</span><br><span class="line">        <span class="keyword">return</span> date1</span><br><span class="line"></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">is_date_valid</span>(<span class="params">date_as_string</span>):</span></span><br><span class="line">        day, month, year = map(int, date_as_string.split(<span class="string">&#x27;-&#x27;</span>))</span><br><span class="line">        <span class="keyword">return</span> day &lt;= <span class="number">31</span> <span class="keyword">and</span> month &lt;= <span class="number">12</span> <span class="keyword">and</span> year &lt;= <span class="number">3999</span></span><br><span class="line"></span><br><span class="line">date2 = Date.from_string(<span class="string">&#x27;11-09-2012&#x27;</span>)</span><br><span class="line">is_date = Date.is_date_valid(<span class="string">&#x27;11-09-2012&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<h1 id="classmethod"><a href="#classmethod" class="headerlink" title="classmethod"></a>classmethod</h1><ol>
+    <h2 id="经典的例子"><a href="#经典的例子" class="headerlink" title="经典的例子"></a>经典的例子</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Date</span>(<span class="params">object</span>):</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, day=<span class="number">0</span>, month=<span class="number">0</span>, year=<span class="number">0</span></span>):</span></span><br><span class="line">        self.day = day</span><br><span class="line">        self.month = month</span><br><span class="line">        self.year = year</span><br><span class="line"></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">from_string</span>(<span class="params">cls, date_as_string</span>):</span></span><br><span class="line">        day, month, year = map(int, date_as_string.split(<span class="string">&#x27;-&#x27;</span>))</span><br><span class="line">        date1 = cls(day, month, year)</span><br><span class="line">        <span class="keyword">return</span> date1</span><br><span class="line"></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">is_date_valid</span>(<span class="params">date_as_string</span>):</span></span><br><span class="line">        day, month, year = map(int, date_as_string.split(<span class="string">&#x27;-&#x27;</span>))</span><br><span class="line">        <span class="keyword">return</span> day &lt;= <span class="number">31</span> <span class="keyword">and</span> month &lt;= <span class="number">12</span> <span class="keyword">and</span> year &lt;= <span class="number">3999</span></span><br><span class="line"></span><br><span class="line">date2 = Date.from_string(<span class="string">&#x27;11-09-2012&#x27;</span>)</span><br><span class="line">is_date = Date.is_date_valid(<span class="string">&#x27;11-09-2012&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="classmethod"><a href="#classmethod" class="headerlink" title="classmethod"></a>classmethod</h2><ol>
 <li>由于python类中只能有一个初始化方法，不能按照不同的情况初始化类。所以类方法常用来模拟多个构造函数（重构构造函数）</li>
 <li>子类的实例继承了父类的类方法，调用该方法，调用的是子类的方法和类属性</li>
 </ol>
-<h1 id="staticmethod"><a href="#staticmethod" class="headerlink" title="staticmethod"></a>staticmethod</h1><ul>
+<h2 id="staticmethod"><a href="#staticmethod" class="headerlink" title="staticmethod"></a>staticmethod</h2><ul>
 <li>一般的使用场景是和类相关的操作，但又不依赖和改变类、实例的状态。<ul>
 <li>例如要实现某一个类的全局计数功能，就可以使用classmethod封装新建实例的操作。</li>
 <li>子类的实例继承父类的静态方法，调用该方法，调用的是父类的方法和父类的类属性。</li>
@@ -196,7 +196,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%8F%E5%85%B8%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="toc-number">1.</span> <span class="toc-text">经典的例子</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#classmethod"><span class="toc-number">2.</span> <span class="toc-text">classmethod</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#staticmethod"><span class="toc-number">3.</span> <span class="toc-text">staticmethod</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%8F%E5%85%B8%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="toc-number">1.</span> <span class="toc-text">经典的例子</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#classmethod"><span class="toc-number">2.</span> <span class="toc-text">classmethod</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#staticmethod"><span class="toc-number">3.</span> <span class="toc-text">staticmethod</span></a></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">

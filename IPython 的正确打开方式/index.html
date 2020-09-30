@@ -14,7 +14,7 @@
 <meta property="og:description" content="前言接触 IPython 其实已经很久了，但一直把它当做简单的 Python Shell 去用，并没有深入的研究过。直到今天调试程序的时候，发现每次修改完某个文件，都需要退出然后再进入 IPython 环境，重新导入一次模块才会生效。来回几次感觉自己特别傻，这样调试一点也不“优雅”，Google 了下才发现 IPython 里有个 autoreload 命令，可以自动监测文件改动，然后重新载入。很">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2018-06-27T05:46:19.000Z">
-<meta property="article:modified_time" content="2020-09-28T16:08:25.167Z">
+<meta property="article:modified_time" content="2020-09-30T03:22:36.574Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="python">
 <meta name="twitter:card" content="summary">
@@ -108,7 +108,7 @@
 
     </div>
     <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E9%87%8D%E8%BD%BD"><span class="toc-number">2.</span> <span class="toc-text">自动重载</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-number">3.</span> <span class="toc-text">常用命令</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E9%87%8D%E8%BD%BD"><span class="toc-number">2.</span> <span class="toc-text">自动重载</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-number">3.</span> <span class="toc-text">常用命令</span></a></li></ol>
     </div>
   </span>
 </div>
@@ -152,8 +152,8 @@
   
 
   <div class="content" itemprop="articleBody">
-    <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>接触 IPython 其实已经很久了，但一直把它当做简单的 Python Shell 去用，并没有深入的研究过。直到今天调试程序的时候，发现每次修改完某个文件，都需要退出然后再进入 IPython 环境，重新导入一次模块才会生效。来回几次感觉自己特别傻，这样调试一点也不“优雅”，Google 了下才发现 IPython 里有个 <code>autoreload</code> 命令，可以自动监测文件改动，然后重新载入。很多时候效率低其实不是工具不好，是不会用。今天就整理一下 IPython 中的一些常用命令。</p>
-<h1 id="自动重载"><a href="#自动重载" class="headerlink" title="自动重载"></a>自动重载</h1><p><code>autoreload</code> 主要用途是在用户执行代码块之前重新加载模块。使用效果如下：</p>
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>接触 IPython 其实已经很久了，但一直把它当做简单的 Python Shell 去用，并没有深入的研究过。直到今天调试程序的时候，发现每次修改完某个文件，都需要退出然后再进入 IPython 环境，重新导入一次模块才会生效。来回几次感觉自己特别傻，这样调试一点也不“优雅”，Google 了下才发现 IPython 里有个 <code>autoreload</code> 命令，可以自动监测文件改动，然后重新载入。很多时候效率低其实不是工具不好，是不会用。今天就整理一下 IPython 中的一些常用命令。</p>
+<h2 id="自动重载"><a href="#自动重载" class="headerlink" title="自动重载"></a>自动重载</h2><p><code>autoreload</code> 主要用途是在用户执行代码块之前重新加载模块。使用效果如下：</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">In [<span class="number">1</span>]: %load_ext autoreload</span><br><span class="line"></span><br><span class="line">In [<span class="number">2</span>]: %autoreload <span class="number">2</span></span><br><span class="line"></span><br><span class="line">In [<span class="number">3</span>]: <span class="keyword">from</span> foo <span class="keyword">import</span> some_function</span><br><span class="line"></span><br><span class="line">In [<span class="number">4</span>]: some_function()</span><br><span class="line">Out[<span class="number">4</span>]: <span class="number">42</span></span><br><span class="line"></span><br><span class="line">In [<span class="number">5</span>]: <span class="comment"># open foo.py in an editor and change some_function to return 43</span></span><br><span class="line"></span><br><span class="line">In [<span class="number">6</span>]: some_function()</span><br><span class="line">Out[<span class="number">6</span>]: <span class="number">43</span></span><br></pre></td></tr></table></figure>
 
 <p>如上所示在修改完某个文件后再次调用同一方法，返回的结果不同，也不需要退出交互环境。但下次进入 IPython 的时候还是需要敲 <code>autoreload</code> 命令，所以我们可以再修改一下 IPython 的配置文件，让它每次启动的时候，自动执行 <code>autoreload</code> 命令。</p>
@@ -164,7 +164,7 @@
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">## lines of code to run at IPython startup.</span></span><br><span class="line">c.InteractiveShellApp.exec_lines = [<span class="string">&#x27;autoreload 2&#x27;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">## A list of dotted module names of IPython extensions to load.</span></span><br><span class="line">c.InteractiveShellApp.extensions = [<span class="string">&#x27;autoreload&#x27;</span>]</span><br></pre></td></tr></table></figure>
 
 <p>这样就可以优雅的调试了😁</p>
-<h1 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h1><p>下面介绍一些常用的命令:</p>
+<h2 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h2><p>下面介绍一些常用的命令:</p>
 <pre><code>- run       运行 Python 脚本，每次都从磁盘读取，和导入模块不同
 - edit      调用编辑器进行编辑（可以配置是 Vim 还是 Emacs）
 - debug     调用 pdb 调试程序，可以通过参数设置断点
@@ -212,7 +212,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E9%87%8D%E8%BD%BD"><span class="toc-number">2.</span> <span class="toc-text">自动重载</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-number">3.</span> <span class="toc-text">常用命令</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E9%87%8D%E8%BD%BD"><span class="toc-number">2.</span> <span class="toc-text">自动重载</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-number">3.</span> <span class="toc-text">常用命令</span></a></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">

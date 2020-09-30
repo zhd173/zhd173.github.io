@@ -14,7 +14,7 @@
 <meta property="og:description" content="问题描述今天工作中碰到了这个问题。抽空记录一下。在用 celery.task 装饰器装饰了定时任务的方法后，启动 worker 进程在任务列表中找不到新增的任务。并且在执行任务时报错，信息如下： [2018-05-31 15:57:52,340: INFO&#x2F;MainProcess] celery@worker-00 ready.[2018-05-31 15:57:52,343: ERROR&#x2F;Mai">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2018-05-31T07:57:45.000Z">
-<meta property="article:modified_time" content="2019-03-04T11:24:46.794Z">
+<meta property="article:modified_time" content="2020-09-30T03:25:01.691Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="python">
 <meta name="twitter:card" content="summary">
@@ -108,7 +108,7 @@
 
     </div>
     <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%8E%9F%E5%9B%A0"><span class="toc-number">2.</span> <span class="toc-text">主要原因</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">3.</span> <span class="toc-text">解决办法</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%8E%9F%E5%9B%A0"><span class="toc-number">2.</span> <span class="toc-text">主要原因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">3.</span> <span class="toc-text">解决办法</span></a></li></ol>
     </div>
   </span>
 </div>
@@ -152,11 +152,11 @@
   
 
   <div class="content" itemprop="articleBody">
-    <h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>今天工作中碰到了这个问题。抽空记录一下。在用 <code>celery.task</code> 装饰器装饰了定时任务的方法后，启动 <code>worker</code> 进程在任务列表中找不到新增的任务。并且在执行任务时报错，信息如下：</p>
+    <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>今天工作中碰到了这个问题。抽空记录一下。在用 <code>celery.task</code> 装饰器装饰了定时任务的方法后，启动 <code>worker</code> 进程在任务列表中找不到新增的任务。并且在执行任务时报错，信息如下：</p>
 <figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">[<span class="number">2018</span>-<span class="number">05</span>-<span class="number">31</span> <span class="number">15</span>:<span class="number">57</span>:<span class="number">52</span>,<span class="number">340</span>: INFO/MainProcess] celery@worker-<span class="number">00</span> ready.</span><br><span class="line">[<span class="number">2018</span>-<span class="number">05</span>-<span class="number">31</span> <span class="number">15</span>:<span class="number">57</span>:<span class="number">52</span>,<span class="number">343</span>: ERROR/MainProcess] Received unregistered task of <span class="built_in">type</span> &#x27;tasks.reports.reports_data_collect&#x27;.</span><br><span class="line">The message has been ignored and discarded.</span><br><span class="line"></span><br><span class="line">Did you remember to import the module containing this task?</span><br><span class="line">Or maybe you&#x27;re using relative imports?</span><br><span class="line"></span><br><span class="line">Please see</span><br><span class="line"><span class="function">http://<span class="title">docs.celeryq.org</span>/<span class="title">en</span>/<span class="title">latest</span>/<span class="title">internals</span>/<span class="title">protocol.html</span></span></span><br><span class="line"><span class="function"><span class="title">for</span> <span class="title">more</span> <span class="title">information</span>.</span></span><br></pre></td></tr></table></figure>
 
-<h1 id="主要原因"><a href="#主要原因" class="headerlink" title="主要原因"></a>主要原因</h1><p>经过分析主要原因是新增的定时任务没有加载至内存中。之前自己写的其他 <code>Celery</code> 任务没有出现这些问题是因为在某个地方导入并调用过。而这次新增的定时任务是写在新建的 <code>.py</code> 文件中，且没有在其他地方 <code>import</code> 过。所以任务在执行时会提示该任务未注册。</p>
-<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>在 Django 中只要在配置文件中加入以下参数即可解决。</p>
+<h2 id="主要原因"><a href="#主要原因" class="headerlink" title="主要原因"></a>主要原因</h2><p>经过分析主要原因是新增的定时任务没有加载至内存中。之前自己写的其他 <code>Celery</code> 任务没有出现这些问题是因为在某个地方导入并调用过。而这次新增的定时任务是写在新建的 <code>.py</code> 文件中，且没有在其他地方 <code>import</code> 过。所以任务在执行时会提示该任务未注册。</p>
+<h2 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h2><p>在 Django 中只要在配置文件中加入以下参数即可解决。</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Celery</span></span><br><span class="line">CELERY_IMPORTS = (<span class="string">&#x27;some.new.tasks&#x27;</span>)</span><br></pre></td></tr></table></figure>
 
 
@@ -191,7 +191,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%8E%9F%E5%9B%A0"><span class="toc-number">2.</span> <span class="toc-text">主要原因</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">3.</span> <span class="toc-text">解决办法</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BB%E8%A6%81%E5%8E%9F%E5%9B%A0"><span class="toc-number">2.</span> <span class="toc-text">主要原因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95"><span class="toc-number">3.</span> <span class="toc-text">解决办法</span></a></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">

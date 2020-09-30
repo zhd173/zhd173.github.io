@@ -14,7 +14,7 @@
 <meta property="og:description" content="最近的工作是一个微信公众号的开发项目。有个小需求是在公众号内的H5页面调起微信支付，这里简单概括一下开发流程。详细的步骤可以直接查看微信支付官方开发文档。 前期准备在开发之前需要准备一个拥有支付权限的微信公众号。下文以普通的商户服务号为例。服务号开通微信支付权限之后，会发邮件告知以下信息： * 微信支付商户号（MCH_ID） * 微信公众账号ID（APP_ID） * 微信支付API秘钥（MCK_K">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2018-07-13T07:52:41.000Z">
-<meta property="article:modified_time" content="2019-03-04T11:24:09.472Z">
+<meta property="article:modified_time" content="2020-09-30T03:22:23.046Z">
 <meta property="article:author" content="zhd173">
 <meta property="article:tag" content="python">
 <meta name="twitter:card" content="summary">
@@ -108,7 +108,7 @@
 
     </div>
     <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E6%9C%9F%E5%87%86%E5%A4%87"><span class="toc-number">1.</span> <span class="toc-text">前期准备</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%9A%E5%8A%A1%E6%B5%81%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">业务流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96%E5%BE%AE%E4%BF%A1%E7%94%A8%E6%88%B7openid"><span class="toc-number">2.1.</span> <span class="toc-text">获取微信用户openid</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF%E5%90%91%E5%90%8E%E7%AB%AF%E5%8F%91%E8%B5%B7%E6%94%AF%E4%BB%98%E8%AF%B7%E6%B1%82"><span class="toc-number">2.2.</span> <span class="toc-text">前端向后端发起支付请求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%8E%E7%AB%AF%E6%94%B6%E5%88%B0%E6%94%AF%E4%BB%98%E8%AF%B7%E6%B1%82%E5%90%8E%E8%AE%BF%E9%97%AE%E5%BE%AE%E4%BF%A1%E7%BB%9F%E4%B8%80%E4%B8%8B%E5%8D%95%E6%8E%A5%E5%8F%A3"><span class="toc-number">2.3.</span> <span class="toc-text">后端收到支付请求后访问微信统一下单接口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%8E%E7%AB%AF%E5%87%86%E5%A4%87%E5%89%8D%E7%AB%AF%E8%B0%83%E7%94%A8-JSAPI-%E6%89%80%E9%9C%80%E7%9A%84%E5%8F%82%E6%95%B0"><span class="toc-number">2.4.</span> <span class="toc-text">后端准备前端调用 JSAPI 所需的参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF%E8%B0%83%E8%B5%B7%E5%BE%AE%E4%BF%A1%E6%94%AF%E4%BB%98"><span class="toc-number">2.5.</span> <span class="toc-text">前端调起微信支付</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%82%E6%AD%A5-%E5%BE%AE%E4%BF%A1%E8%BF%94%E5%9B%9E%E6%94%AF%E4%BB%98%E7%BB%93%E6%9E%9C%E7%BB%99%E5%90%8E%E7%AB%AF"><span class="toc-number">2.6.</span> <span class="toc-text">[异步] 微信返回支付结果给后端</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">3.</span> <span class="toc-text">注意事项</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E6%9C%9F%E5%87%86%E5%A4%87"><span class="toc-number">1.</span> <span class="toc-text">前期准备</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%9A%E5%8A%A1%E6%B5%81%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">业务流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96%E5%BE%AE%E4%BF%A1%E7%94%A8%E6%88%B7openid"><span class="toc-number">2.1.</span> <span class="toc-text">获取微信用户openid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF%E5%90%91%E5%90%8E%E7%AB%AF%E5%8F%91%E8%B5%B7%E6%94%AF%E4%BB%98%E8%AF%B7%E6%B1%82"><span class="toc-number">2.2.</span> <span class="toc-text">前端向后端发起支付请求</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%8E%E7%AB%AF%E6%94%B6%E5%88%B0%E6%94%AF%E4%BB%98%E8%AF%B7%E6%B1%82%E5%90%8E%E8%AE%BF%E9%97%AE%E5%BE%AE%E4%BF%A1%E7%BB%9F%E4%B8%80%E4%B8%8B%E5%8D%95%E6%8E%A5%E5%8F%A3"><span class="toc-number">2.3.</span> <span class="toc-text">后端收到支付请求后访问微信统一下单接口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%8E%E7%AB%AF%E5%87%86%E5%A4%87%E5%89%8D%E7%AB%AF%E8%B0%83%E7%94%A8-JSAPI-%E6%89%80%E9%9C%80%E7%9A%84%E5%8F%82%E6%95%B0"><span class="toc-number">2.4.</span> <span class="toc-text">后端准备前端调用 JSAPI 所需的参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF%E8%B0%83%E8%B5%B7%E5%BE%AE%E4%BF%A1%E6%94%AF%E4%BB%98"><span class="toc-number">2.5.</span> <span class="toc-text">前端调起微信支付</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%82%E6%AD%A5-%E5%BE%AE%E4%BF%A1%E8%BF%94%E5%9B%9E%E6%94%AF%E4%BB%98%E7%BB%93%E6%9E%9C%E7%BB%99%E5%90%8E%E7%AB%AF"><span class="toc-number">2.6.</span> <span class="toc-text">[异步] 微信返回支付结果给后端</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">3.</span> <span class="toc-text">注意事项</span></a></li></ol>
     </div>
   </span>
 </div>
@@ -153,16 +153,16 @@
 
   <div class="content" itemprop="articleBody">
     <p>最近的工作是一个微信公众号的开发项目。有个小需求是在公众号内的H5页面调起微信支付，这里简单概括一下开发流程。详细的步骤可以直接查看<a target="_blank" rel="noopener" href="https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=7_1">微信支付官方开发文档</a>。</p>
-<h1 id="前期准备"><a href="#前期准备" class="headerlink" title="前期准备"></a>前期准备</h1><p>在开发之前需要准备一个拥有支付权限的微信公众号。下文以普通的商户服务号为例。服务号开通微信支付权限之后，会发邮件告知以下信息：</p>
+<h2 id="前期准备"><a href="#前期准备" class="headerlink" title="前期准备"></a>前期准备</h2><p>在开发之前需要准备一个拥有支付权限的微信公众号。下文以普通的商户服务号为例。服务号开通微信支付权限之后，会发邮件告知以下信息：</p>
 <pre><code>* 微信支付商户号（MCH_ID）
 * 微信公众账号ID（APP_ID）
 * 微信支付API秘钥（MCK_KEY）
 * 微信公众账号Secret（APP_SECRET）</code></pre>
 <p>保存好这些信息，会在之后的接口请求中使用。</p>
-<h1 id="业务流程"><a href="#业务流程" class="headerlink" title="业务流程"></a>业务流程</h1><p>公众号内支付主要有以下业务流程：</p>
-<h2 id="获取微信用户openid"><a href="#获取微信用户openid" class="headerlink" title="获取微信用户openid"></a>获取微信用户<code>openid</code></h2><p>使用 APP_ID 和 APP_SECRET 获取微信用户<code>openid</code>，该 ID 仅在当前公众号有效。跟 APP_ID 绑定。</p>
-<h2 id="前端向后端发起支付请求"><a href="#前端向后端发起支付请求" class="headerlink" title="前端向后端发起支付请求"></a>前端向后端发起支付请求</h2><p>例如用户点击了支付按钮，前端参数请求 <code>GET wx/config</code> (自拟)接口以获取需要在客户端调起 JSAPI 的参数。</p>
-<h2 id="后端收到支付请求后访问微信统一下单接口"><a href="#后端收到支付请求后访问微信统一下单接口" class="headerlink" title="后端收到支付请求后访问微信统一下单接口"></a>后端收到支付请求后访问微信统一下单接口</h2><p><a target="_blank" rel="noopener" href="https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1">统一下单支付接口</a></p>
+<h2 id="业务流程"><a href="#业务流程" class="headerlink" title="业务流程"></a>业务流程</h2><p>公众号内支付主要有以下业务流程：</p>
+<h3 id="获取微信用户openid"><a href="#获取微信用户openid" class="headerlink" title="获取微信用户openid"></a>获取微信用户<code>openid</code></h3><p>使用 APP_ID 和 APP_SECRET 获取微信用户<code>openid</code>，该 ID 仅在当前公众号有效。跟 APP_ID 绑定。</p>
+<h3 id="前端向后端发起支付请求"><a href="#前端向后端发起支付请求" class="headerlink" title="前端向后端发起支付请求"></a>前端向后端发起支付请求</h3><p>例如用户点击了支付按钮，前端参数请求 <code>GET wx/config</code> (自拟)接口以获取需要在客户端调起 JSAPI 的参数。</p>
+<h3 id="后端收到支付请求后访问微信统一下单接口"><a href="#后端收到支付请求后访问微信统一下单接口" class="headerlink" title="后端收到支付请求后访问微信统一下单接口"></a>后端收到支付请求后访问微信统一下单接口</h3><p><a target="_blank" rel="noopener" href="https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1">统一下单支付接口</a></p>
 <p>参考上面的文档传入一下参数：</p>
 <pre><code>* appid 公众账号ID
 * mac_id 商户号
@@ -181,19 +181,19 @@
 * total_fee 用了浮点数。该参数单位为分，不可使用小数</code></pre>
 <p>请求成功后，微信会返回成功信息，我们主要用到里面的<code>prepay\_id</code>字段。</p>
 <p>这里我们可以在业务数据库中插入一条交易信息，以管理这些微信支付的订单。具体的表字段可以看自己的需求设计。</p>
-<h2 id="后端准备前端调用-JSAPI-所需的参数"><a href="#后端准备前端调用-JSAPI-所需的参数" class="headerlink" title="后端准备前端调用 JSAPI 所需的参数"></a>后端准备前端调用 JSAPI 所需的参数</h2><p>前端调起微信支付 JSAPI 所需的参数如下：</p>
+<h3 id="后端准备前端调用-JSAPI-所需的参数"><a href="#后端准备前端调用-JSAPI-所需的参数" class="headerlink" title="后端准备前端调用 JSAPI 所需的参数"></a>后端准备前端调用 JSAPI 所需的参数</h3><p>前端调起微信支付 JSAPI 所需的参数如下：</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">raw = dict(</span><br><span class="line">    appId=self.app_id,</span><br><span class="line">    timeStamp=timestamp,</span><br><span class="line">    nonceStr=nonce_str,</span><br><span class="line">    package=package,</span><br><span class="line">    signType=<span class="string">&quot;MD5&quot;</span>)</span><br><span class="line"><span class="comment"># 签名</span></span><br><span class="line">sign = self.sign(raw)</span><br></pre></td></tr></table></figure>
 <p>签名时注意大小写。</p>
-<h2 id="前端调起微信支付"><a href="#前端调起微信支付" class="headerlink" title="前端调起微信支付"></a>前端调起微信支付</h2><p>前端使用上一步传入的参数使用 JSAPI 调起微信支付，直接请求微信支付接口，微信会返回给前端以下情况：</p>
+<h3 id="前端调起微信支付"><a href="#前端调起微信支付" class="headerlink" title="前端调起微信支付"></a>前端调起微信支付</h3><p>前端使用上一步传入的参数使用 JSAPI 调起微信支付，直接请求微信支付接口，微信会返回给前端以下情况：</p>
 <pre><code>* get_brand_wcpay_request:ok 支付成功
 * get_brand_wcpay_request:cancel 支付取消
 * get_brand_wcpay_request:fail 支付失败
 * 调用支付JSAPI缺少参数：total_fee</code></pre>
 <p>前端需要针对不同的返回做不同的处理，尽量不要直接将错误反馈给用户。</p>
-<h2 id="异步-微信返回支付结果给后端"><a href="#异步-微信返回支付结果给后端" class="headerlink" title="[异步] 微信返回支付结果给后端"></a>[异步] 微信返回支付结果给后端</h2><p>通过在统一下单接口中的<code>notify_url</code>回调地址，微信会发送支付的结果给这个接口。后端对应的接口就需要根据微信返回的结果处理自身的业务数据，比如我们是生成某种会员卡，然后完善数据库之前下单时生成的交易订单信息。</p>
+<h3 id="异步-微信返回支付结果给后端"><a href="#异步-微信返回支付结果给后端" class="headerlink" title="[异步] 微信返回支付结果给后端"></a>[异步] 微信返回支付结果给后端</h3><p>通过在统一下单接口中的<code>notify_url</code>回调地址，微信会发送支付的结果给这个接口。后端对应的接口就需要根据微信返回的结果处理自身的业务数据，比如我们是生成某种会员卡，然后完善数据库之前下单时生成的交易订单信息。</p>
 <p>处理完这些后，需要给微信反馈你处理的结果。具体格式参见<a target="_blank" rel="noopener" href="https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_7&index=8">微信支付结果通知文档</a></p>
 <p>这里如果没有正确发送给微信相应的通知，微信会重复发送请求，导致业务数据的混乱。</p>
-<h1 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h1><p>有一个非常容易出错的地方一定要注意：</p>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><p>有一个非常容易出错的地方一定要注意：</p>
 <pre><code>* 签名的算法需要再三验证准确性
 * 签名所需的参数名一定要和微信所需要的参数名大小写一致，否则会导致签名验证失败
 * 支付金额参数的单位是分
@@ -229,7 +229,7 @@
     </div>
 
     <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E6%9C%9F%E5%87%86%E5%A4%87"><span class="toc-number">1.</span> <span class="toc-text">前期准备</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%9A%E5%8A%A1%E6%B5%81%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">业务流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96%E5%BE%AE%E4%BF%A1%E7%94%A8%E6%88%B7openid"><span class="toc-number">2.1.</span> <span class="toc-text">获取微信用户openid</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF%E5%90%91%E5%90%8E%E7%AB%AF%E5%8F%91%E8%B5%B7%E6%94%AF%E4%BB%98%E8%AF%B7%E6%B1%82"><span class="toc-number">2.2.</span> <span class="toc-text">前端向后端发起支付请求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%8E%E7%AB%AF%E6%94%B6%E5%88%B0%E6%94%AF%E4%BB%98%E8%AF%B7%E6%B1%82%E5%90%8E%E8%AE%BF%E9%97%AE%E5%BE%AE%E4%BF%A1%E7%BB%9F%E4%B8%80%E4%B8%8B%E5%8D%95%E6%8E%A5%E5%8F%A3"><span class="toc-number">2.3.</span> <span class="toc-text">后端收到支付请求后访问微信统一下单接口</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%8E%E7%AB%AF%E5%87%86%E5%A4%87%E5%89%8D%E7%AB%AF%E8%B0%83%E7%94%A8-JSAPI-%E6%89%80%E9%9C%80%E7%9A%84%E5%8F%82%E6%95%B0"><span class="toc-number">2.4.</span> <span class="toc-text">后端准备前端调用 JSAPI 所需的参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF%E8%B0%83%E8%B5%B7%E5%BE%AE%E4%BF%A1%E6%94%AF%E4%BB%98"><span class="toc-number">2.5.</span> <span class="toc-text">前端调起微信支付</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%82%E6%AD%A5-%E5%BE%AE%E4%BF%A1%E8%BF%94%E5%9B%9E%E6%94%AF%E4%BB%98%E7%BB%93%E6%9E%9C%E7%BB%99%E5%90%8E%E7%AB%AF"><span class="toc-number">2.6.</span> <span class="toc-text">[异步] 微信返回支付结果给后端</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">3.</span> <span class="toc-text">注意事项</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E6%9C%9F%E5%87%86%E5%A4%87"><span class="toc-number">1.</span> <span class="toc-text">前期准备</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%9A%E5%8A%A1%E6%B5%81%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">业务流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96%E5%BE%AE%E4%BF%A1%E7%94%A8%E6%88%B7openid"><span class="toc-number">2.1.</span> <span class="toc-text">获取微信用户openid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF%E5%90%91%E5%90%8E%E7%AB%AF%E5%8F%91%E8%B5%B7%E6%94%AF%E4%BB%98%E8%AF%B7%E6%B1%82"><span class="toc-number">2.2.</span> <span class="toc-text">前端向后端发起支付请求</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%8E%E7%AB%AF%E6%94%B6%E5%88%B0%E6%94%AF%E4%BB%98%E8%AF%B7%E6%B1%82%E5%90%8E%E8%AE%BF%E9%97%AE%E5%BE%AE%E4%BF%A1%E7%BB%9F%E4%B8%80%E4%B8%8B%E5%8D%95%E6%8E%A5%E5%8F%A3"><span class="toc-number">2.3.</span> <span class="toc-text">后端收到支付请求后访问微信统一下单接口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%8E%E7%AB%AF%E5%87%86%E5%A4%87%E5%89%8D%E7%AB%AF%E8%B0%83%E7%94%A8-JSAPI-%E6%89%80%E9%9C%80%E7%9A%84%E5%8F%82%E6%95%B0"><span class="toc-number">2.4.</span> <span class="toc-text">后端准备前端调用 JSAPI 所需的参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E7%AB%AF%E8%B0%83%E8%B5%B7%E5%BE%AE%E4%BF%A1%E6%94%AF%E4%BB%98"><span class="toc-number">2.5.</span> <span class="toc-text">前端调起微信支付</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%82%E6%AD%A5-%E5%BE%AE%E4%BF%A1%E8%BF%94%E5%9B%9E%E6%94%AF%E4%BB%98%E7%BB%93%E6%9E%9C%E7%BB%99%E5%90%8E%E7%AB%AF"><span class="toc-number">2.6.</span> <span class="toc-text">[异步] 微信返回支付结果给后端</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">3.</span> <span class="toc-text">注意事项</span></a></li></ol>
     </div>
 
     <div id="share-footer" style="display: none">
